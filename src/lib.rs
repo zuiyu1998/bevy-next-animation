@@ -1,3 +1,5 @@
+pub mod value;
+
 use bevy::prelude::*;
 
 #[derive(Component)]
