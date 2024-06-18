@@ -3,6 +3,10 @@ use bevy::{
     reflect::{DynamicStruct, Reflect, ReflectKind, Struct},
 };
 
+pub struct BoundValueCollection {
+    pub values: Vec<BoundValue>,
+}
+
 ///可支持的关键帧数据类型
 #[derive(Debug, Clone, Copy)]
 pub enum ValueType {
@@ -33,12 +37,12 @@ impl TrackValue {
 }
 
 ///用来修改组件的关键帧数据抽象
-pub struct BindValue {
+pub struct BoundValue {
     binding: ValueBinding,
     value: TrackValue,
 }
 
-impl BindValue {
+impl BoundValue {
     ///根据weight 混合
     pub fn blend_with(&mut self, other: &Self, weight: f32) {
         assert_eq!(self.binding.path, other.binding.path);

@@ -1,11 +1,18 @@
 pub mod value;
 
-use bevy::prelude::*;
+use bevy::{ecs::component::ComponentId, prelude::*, utils::HashMap};
+use value::BoundValueCollection;
 
 #[derive(Component)]
-pub struct EntityTrack {}
+pub struct EntityTrack {
+    values: HashMap<ComponentId, BoundValueCollection>,
+}
 
-pub fn update_animation() {}
+pub fn update_animation(world: &mut World) {
+    let mut tracks = world.query_filtered::<&EntityTrack, With<EntityTrack>>();
+
+    for track in tracks.iter(world) {}
+}
 
 pub struct BevyNextAnimationPlugin;
 
