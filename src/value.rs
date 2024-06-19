@@ -1,7 +1,15 @@
+use std::any::TypeId;
+
 use bevy::{
     math::FloatExt,
     reflect::{DynamicStruct, Reflect, ReflectKind, Struct},
+    utils::HashMap,
 };
+
+#[derive(Default)]
+pub struct ReflectCollection {
+    pub values: HashMap<TypeId, Box<dyn Reflect>>,
+}
 
 pub struct BoundValueCollection {
     pub values: Vec<BoundValue>,
