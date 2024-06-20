@@ -6,11 +6,7 @@ use bevy::{
     },
 };
 
-use bevy_next_animation::{
-    track::{EntityTrack, Keyframe, Track},
-    value::{ValueBinding, ValueType},
-    AnimationBundle, BevyNextAnimationPlugin, EntityAnimationPlayer,
-};
+use bevy_next_animation::prelude::*;
 
 #[derive(Component, Reflect, Default)]
 pub struct TestA {

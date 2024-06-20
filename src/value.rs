@@ -11,8 +11,8 @@ pub struct BoundValueCollection {
 ///可支持的关键帧数据类型
 #[derive(Debug, Clone, Copy)]
 pub enum ValueType {
-    //
     Bool,
+    Usize,
 }
 
 ///组件修改的字段路径和关键帧的数据类型
@@ -34,6 +34,7 @@ impl TrackValue {
     pub fn get_number_type(&self, value: ValueType) -> Option<Box<dyn Reflect>> {
         match value {
             ValueType::Bool => Some(Box::new(self.0.ne(&0.0))),
+            ValueType::Usize => Some(Box::new(self.0 as usize)),
         }
     }
 }
