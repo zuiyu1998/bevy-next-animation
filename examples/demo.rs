@@ -13,6 +13,11 @@ pub struct TestA {
     pub a: bool,
 }
 
+#[derive(Component, Reflect, Default)]
+pub struct TestB {
+    pub a: bool,
+}
+
 fn main() {
     let mut app = App::new();
 
@@ -24,7 +29,7 @@ fn main() {
             }),
             ..default()
         }),
-        BevyNextAnimationPlugin::<TestA>::new(),
+        BevyNextAnimationPlugin::<FromComponent<TestA>>::new(),
     ));
 
     app.add_systems(Startup, setup);
@@ -60,7 +65,7 @@ pub fn setup(mut commands: Commands) {
 
     commands.spawn((
         TestA { a: false },
-        AnimationBundle::<TestA>::new(animation_player),
+        AnimationBundle::<FromComponent<TestA>>::new(animation_player),
     ));
 }
 

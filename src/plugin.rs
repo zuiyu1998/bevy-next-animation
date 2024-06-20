@@ -2,30 +2,58 @@ use std::{any::TypeId, marker::PhantomData};
 
 use crate::track::EntityTrack;
 use crate::value::BoundValueCollection;
-use bevy::{ecs::system::SystemState, prelude::*, utils::HashMap};
+use bevy::{
+    ecs::system::SystemState,
+    prelude::*,
+    utils::{all_tuples, HashMap},
+};
 
-pub trait AnimationComponent: Component + Reflect {
+pub trait AnimationComponent: 'static + Sync + Send {
     fn update_world(world: EntityWorldMut, pose: AnimationPose);
 }
 
-#[derive(Component)]
-pub struct AnimationComponentMarker<A>(PhantomData<A>);
+macro_rules! impl_tuple_animation_component {
+    ($($T:ident),*) => {
+        impl<$($T: Reflect + Component),*>  AnimationComponent for ($(FromComponent<$T>,)*) {
+            #![allow(unused)]
+            fn update_world(mut world: EntityWorldMut, pose: AnimationPose) {
+                $(
+                    {
+                        update_component::<$T>(&mut world, &pose);
+                    }
+                )*
+            }
+        }
 
-impl<A> AnimationComponentMarker<A> {
+    };
+}
+
+all_tuples!(impl_tuple_animation_component, 0, 15, T);
+
+#[derive(Component)]
+pub struct AnimationComponentMarker<A: AnimationComponent>(PhantomData<A>);
+
+impl<A: AnimationComponent> AnimationComponentMarker<A> {
     pub fn new() -> Self {
         AnimationComponentMarker(PhantomData::default())
     }
 }
 
-impl<T: Component + Reflect> AnimationComponent for T {
-    fn update_world(mut world: EntityWorldMut, pose: AnimationPose) {
-        if let Some(value) = world.get_mut::<T>() {
-            let relect: &mut dyn Reflect = value.into_inner();
+pub struct FromComponent<T>(PhantomData<T>);
 
-            if let Some(collection) = pose.get(&TypeId::of::<T>()) {
-                for bound_value in collection.values.iter() {
-                    bound_value.apply_to_object(relect);
-                }
+impl<T: Component + Reflect> AnimationComponent for FromComponent<T> {
+    fn update_world(mut world: EntityWorldMut, pose: AnimationPose) {
+        update_component::<T>(&mut world, &pose);
+    }
+}
+
+pub fn update_component<T: Reflect + Component>(world: &mut EntityWorldMut, pose: &AnimationPose) {
+    if let Some(value) = world.get_mut::<T>() {
+        let relect: &mut dyn Reflect = value.into_inner();
+
+        if let Some(collection) = pose.get(&TypeId::of::<T>()) {
+            for bound_value in collection.values.iter() {
+                bound_value.apply_to_object(relect);
             }
         }
     }
@@ -116,7 +144,7 @@ pub struct AnimationBundle<T: AnimationComponent> {
 impl<T: AnimationComponent> AnimationBundle<T> {
     pub fn new(player: EntityAnimationPlayer) -> Self {
         Self {
-            player: player,
+            player,
             marker: AnimationComponentMarker::new(),
         }
     }
