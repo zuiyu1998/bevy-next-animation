@@ -36,10 +36,15 @@ impl<T: Component + Reflect> AnimationComponent for T {
 
 #[derive(Component)]
 pub struct EntityAnimationPlayer {
-    pub tracks: HashMap<TypeId, EntityTrack>,
+    animation: EntityAnimation,
 
     time: f32,
     state: EntityAnimationState,
+}
+
+#[derive(Default)]
+pub struct EntityAnimation {
+    pub tracks: HashMap<TypeId, EntityTrack>,
 }
 
 pub enum EntityAnimationState {
@@ -53,7 +58,7 @@ impl EntityAnimationPlayer {
         EntityAnimationPlayer {
             time: 0.0,
             state: EntityAnimationState::Reset,
-            tracks: Default::default(),
+            animation: Default::default(),
         }
     }
 
@@ -75,15 +80,15 @@ impl EntityAnimationPlayer {
     }
 
     pub fn add_entity_track<T: Reflect + Component>(&mut self, track: EntityTrack) {
-        self.tracks.insert(TypeId::of::<T>(), track);
+        self.animation.tracks.insert(TypeId::of::<T>(), track);
     }
 
     pub fn get_mut_entity_track<T: Reflect + Component>(&mut self) -> Option<&mut EntityTrack> {
-        self.tracks.get_mut(&TypeId::of::<T>())
+        self.animation.tracks.get_mut(&TypeId::of::<T>())
     }
 
     pub fn get_entity_track<T: Reflect + Component>(&mut self) -> Option<&EntityTrack> {
-        self.tracks.get(&TypeId::of::<T>())
+        self.animation.tracks.get(&TypeId::of::<T>())
     }
 
     pub fn get_animation_pose(&mut self, dt: f32) -> AnimationPose {
@@ -93,7 +98,7 @@ impl EntityAnimationPlayer {
 
         let mut pose = AnimationPose::default();
 
-        for (type_id, track) in self.tracks.iter() {
+        for (type_id, track) in self.animation.tracks.iter() {
             let collection = track.fetch(self.time);
             pose.insert(*type_id, collection);
         }
