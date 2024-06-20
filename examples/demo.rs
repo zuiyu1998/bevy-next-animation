@@ -22,7 +22,7 @@ fn main() {
             }),
             ..default()
         }),
-        BevyNextAnimationPlugin::<TestA>::default(),
+        BevyNextAnimationPlugin::<TestA>::new(),
     ));
 
     app.add_systems(Startup, setup);

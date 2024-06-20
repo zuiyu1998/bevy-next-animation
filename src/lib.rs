@@ -2,7 +2,7 @@ pub mod value;
 
 use std::{any::TypeId, marker::PhantomData};
 
-use bevy::{ecs::system::SystemState, log, prelude::*, utils::HashMap};
+use bevy::{ecs::system::SystemState, prelude::*, utils::HashMap};
 use value::{BoundValueCollection, ReflectCollection};
 
 pub trait AnimationComponent: Component + Reflect {
@@ -86,8 +86,13 @@ pub fn update_entity_animation<A: AnimationComponent>(
     }
 }
 
-#[derive(Default)]
 pub struct BevyNextAnimationPlugin<A>(PhantomData<A>);
+
+impl<A> BevyNextAnimationPlugin<A> {
+    pub fn new() -> Self {
+        BevyNextAnimationPlugin(PhantomData::default())
+    }
+}
 
 impl<A: AnimationComponent> Plugin for BevyNextAnimationPlugin<A> {
     fn build(&self, app: &mut App) {
