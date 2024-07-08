@@ -1,11 +1,44 @@
 use bevy::{
     math::FloatExt,
-    reflect::{Reflect, ReflectMut},
+    reflect::{DynamicStruct, Reflect, ReflectKind},
 };
 
-#[derive(Default)]
 pub struct BoundValueCollection {
     pub values: Vec<BoundValue>,
+    pub relect_kind: ReflectKind,
+}
+
+impl BoundValueCollection {
+    pub fn get_dynamic(&self) -> Box<dyn Reflect> {
+        match self.relect_kind {
+            ReflectKind::Struct => self.get_dynamic_struct(),
+
+            _ => {
+                todo!()
+            }
+        }
+    }
+
+    pub fn get_dynamic_struct(&self) -> Box<dyn Reflect> {
+        let mut dynamic = DynamicStruct::default();
+
+        for value in self.values.iter() {
+            if let Some(reflect) = value.get_reflect_value() {
+                dynamic.insert_boxed(value.binding.path.clone(), reflect);
+            }
+        }
+
+        Box::new(dynamic)
+    }
+}
+
+impl Default for BoundValueCollection {
+    fn default() -> Self {
+        Self {
+            values: vec![],
+            relect_kind: ReflectKind::Struct,
+        }
+    }
 }
 
 ///可支持的关键帧数据类型
@@ -52,18 +85,8 @@ impl BoundValue {
         self.value.blend_with(&other.value, weight);
     }
 
-    ///设置组件的数据
-    pub fn apply_to_object(&self, object: &mut dyn Reflect) {
-        if let Some(caset) = self.value.get_number_type(self.binding.value_type) {
-            match object.reflect_mut() {
-                ReflectMut::Struct(object) => {
-                    if let Some(field) = object.field_mut(&self.binding.path) {
-                        field.apply(&(*caset));
-                    };
-                }
-                _ => {}
-            }
-        }
+    pub fn get_reflect_value(&self) -> Option<Box<dyn Reflect>> {
+        self.value.get_number_type(self.binding.value_type)
     }
 }
 
@@ -90,9 +113,13 @@ mod test {
             value: TrackValue(1.0),
         };
 
-        let reflect: &mut dyn Reflect = &mut test_a;
+        let reflect: &mut dyn Struct = &mut test_a;
 
-        bound_value.apply_to_object(reflect);
+        let mut value = bound_value.get_reflect_value().unwrap();
+
+        if let Some(field) = reflect.field_mut(&bound_value.binding.path) {
+            field.apply(&mut *value);
+        }
 
         assert_eq!(test_a.a, true);
     }

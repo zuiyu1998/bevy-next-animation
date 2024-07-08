@@ -1,4 +1,5 @@
-use bevy::utils::{HashMap, Uuid};
+use bevy::utils::HashMap;
+use uuid::Uuid;
 
 use crate::value::{BoundValue, BoundValueCollection, TrackValue};
 

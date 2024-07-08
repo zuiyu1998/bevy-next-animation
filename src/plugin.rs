@@ -1,63 +1,8 @@
-use std::{any::TypeId, marker::PhantomData};
+use std::any::TypeId;
 
 use crate::track::EntityTrack;
 use crate::value::BoundValueCollection;
-use bevy::{
-    ecs::system::SystemState,
-    prelude::*,
-    utils::{all_tuples, HashMap},
-};
-
-pub trait AnimationComponent: 'static + Sync + Send {
-    fn update_world(world: EntityWorldMut, pose: AnimationPose);
-}
-
-macro_rules! impl_tuple_animation_component {
-    ($($T:ident),*) => {
-        impl<$($T: Reflect + Component),*>  AnimationComponent for ($(FromComponent<$T>,)*) {
-            #![allow(unused)]
-            fn update_world(mut world: EntityWorldMut, pose: AnimationPose) {
-                $(
-                    {
-                        update_component::<$T>(&mut world, &pose);
-                    }
-                )*
-            }
-        }
-
-    };
-}
-
-all_tuples!(impl_tuple_animation_component, 0, 15, T);
-
-#[derive(Component)]
-pub struct AnimationComponentMarker<A: AnimationComponent>(PhantomData<A>);
-
-impl<A: AnimationComponent> AnimationComponentMarker<A> {
-    pub fn new() -> Self {
-        AnimationComponentMarker(PhantomData::default())
-    }
-}
-
-pub struct FromComponent<T>(PhantomData<T>);
-
-impl<T: Component + Reflect> AnimationComponent for FromComponent<T> {
-    fn update_world(mut world: EntityWorldMut, pose: AnimationPose) {
-        update_component::<T>(&mut world, &pose);
-    }
-}
-
-pub fn update_component<T: Reflect + Component>(world: &mut EntityWorldMut, pose: &AnimationPose) {
-    if let Some(value) = world.get_mut::<T>() {
-        let relect: &mut dyn Reflect = value.into_inner();
-
-        if let Some(collection) = pose.get(&TypeId::of::<T>()) {
-            for bound_value in collection.values.iter() {
-                bound_value.apply_to_object(relect);
-            }
-        }
-    }
-}
+use bevy::{ecs::system::SystemState, prelude::*, utils::HashMap};
 
 #[derive(Component)]
 pub struct EntityAnimationPlayer {
@@ -135,34 +80,42 @@ impl EntityAnimationPlayer {
 #[derive(Deref, DerefMut, Default)]
 pub struct AnimationPose(HashMap<TypeId, BoundValueCollection>);
 
-#[derive(Bundle)]
-pub struct AnimationBundle<T: AnimationComponent> {
-    player: EntityAnimationPlayer,
-    marker: AnimationComponentMarker<T>,
-}
+impl AnimationPose {
+    pub fn get_reflect_component_map(
+        &self,
+        registry: &AppTypeRegistry,
+    ) -> HashMap<TypeId, ReflectComponent> {
+        let mut reflect_component_map = HashMap::default();
 
-impl<T: AnimationComponent> AnimationBundle<T> {
-    pub fn new(player: EntityAnimationPlayer) -> Self {
-        Self {
-            player,
-            marker: AnimationComponentMarker::new(),
+        let registry = registry.read();
+
+        for type_id in self.keys() {
+            if let Some(registraion) = registry.get(type_id.clone()) {
+                if let Some(reflect_component) = registraion.data::<ReflectComponent>() {
+                    reflect_component_map.insert(type_id.clone(), reflect_component.clone());
+                } else {
+                    info!(
+                        "type {:?} not found ReflectComponent",
+                        registraion.type_info().type_path_table().ident()
+                    );
+                }
+            }
         }
+
+        reflect_component_map
     }
 }
 
-pub fn update_animation<A: AnimationComponent>(world: &mut World) {
+pub fn update_animation(world: &mut World) {
     let mut state = SystemState::<(
         Res<Time>,
-        Query<
-            Entity,
-            (
-                With<EntityAnimationPlayer>,
-                With<AnimationComponentMarker<A>>,
-            ),
-        >,
+        Res<AppTypeRegistry>,
+        Query<Entity, (With<EntityAnimationPlayer>,)>,
     )>::new(world);
 
-    let (time, animation_q) = state.get(world);
+    let (time, registry, animation_q) = state.get(world);
+
+    let registry = registry.clone();
 
     let mut animation_entitys = vec![];
     let time: f32 = time.delta_seconds();
@@ -172,34 +125,37 @@ pub fn update_animation<A: AnimationComponent>(world: &mut World) {
     }
 
     for entity in animation_entitys.into_iter() {
-        update_entity_animation::<A>(world, entity, time);
+        update_entity_animation(world, entity, time, &registry);
     }
 }
 
-pub fn update_entity_animation<A: AnimationComponent>(
+pub fn update_entity_animation(
     world: &mut World,
     entity: Entity,
     time: f32,
+    registry: &AppTypeRegistry,
 ) {
     let mut entity_world = world.get_entity_mut(entity).unwrap();
 
     let mut animation = entity_world.get_mut::<EntityAnimationPlayer>().unwrap();
 
-    let pose = animation.get_animation_pose(time);
+    let mut pose = animation.get_animation_pose(time);
 
-    A::update_world(entity_world, pose);
-}
+    let reflect_component_map = pose.get_reflect_component_map(registry);
 
-pub struct BevyNextAnimationPlugin<A>(PhantomData<A>);
+    for (type_id, reflect_component) in reflect_component_map.into_iter() {
+        let collection = pose.remove(&type_id).unwrap();
 
-impl<A> BevyNextAnimationPlugin<A> {
-    pub fn new() -> Self {
-        BevyNextAnimationPlugin(PhantomData::default())
+        let component = collection.get_dynamic();
+
+        reflect_component.apply(&mut entity_world, &*component);
     }
 }
 
-impl<A: AnimationComponent> Plugin for BevyNextAnimationPlugin<A> {
+pub struct BevyNextAnimationPlugin;
+
+impl Plugin for BevyNextAnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_animation::<A>);
+        app.add_systems(Update, update_animation);
     }
 }

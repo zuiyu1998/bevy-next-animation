@@ -9,6 +9,7 @@ use bevy::{
 use bevy_next_animation::prelude::*;
 
 #[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct TestA {
     pub a: bool,
 }
@@ -29,8 +30,10 @@ fn main() {
             }),
             ..default()
         }),
-        BevyNextAnimationPlugin::<FromComponent<TestA>>::new(),
+        BevyNextAnimationPlugin,
     ));
+
+    app.register_type::<TestA>();
 
     app.add_systems(Startup, setup);
     app.add_systems(Update, debug_test);
@@ -63,10 +66,7 @@ pub fn setup(mut commands: Commands) {
 
     animation_player.playing();
 
-    commands.spawn((
-        TestA { a: false },
-        AnimationBundle::<FromComponent<TestA>>::new(animation_player),
-    ));
+    commands.spawn((TestA { a: false }, animation_player));
 }
 
 fn debug_test(test_a_q: Query<&TestA>) {
