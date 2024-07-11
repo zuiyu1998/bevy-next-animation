@@ -60,13 +60,13 @@ pub fn setup(mut commands: Commands) {
 
     entity_track.add_track(track);
 
-    let mut animation_player = EntityAnimationPlayer::new();
+    // let mut animation_player = EntityAnimationPlayer::new();
 
-    animation_player.add_entity_track::<TestA>(entity_track);
+    // animation_player.add_entity_track::<TestA>(entity_track);
 
-    animation_player.playing();
+    // animation_player.playing();
 
-    commands.spawn((TestA { a: false }, animation_player));
+    // commands.spawn((TestA { a: false }, animation_player));
 }
 
 fn debug_test(test_a_q: Query<&TestA>) {
