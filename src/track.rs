@@ -5,7 +5,7 @@ use crate::value::{BoundValue, BoundValueCollection, TrackValue};
 
 use super::value::ValueBinding;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct EntityTrack {
     pub values: HashMap<String, Track>,
 }
@@ -28,6 +28,7 @@ impl EntityTrack {
     }
 }
 
+#[derive(Clone)]
 pub struct Track {
     enabled: bool,
     frames: TrackDataContainer,
@@ -62,6 +63,7 @@ impl Track {
     }
 }
 
+#[derive(Clone)]
 pub struct TrackDataContainer {
     //关键帧数据
     keyframes: HashMap<Uuid, Keyframe>,
@@ -113,11 +115,12 @@ impl TrackDataContainer {
     }
 }
 
+#[derive(Clone)]
 pub enum InterpolationMode {
     Constant,
 }
 
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Keyframe {
     pub id: Uuid,
     pub location: usize,
