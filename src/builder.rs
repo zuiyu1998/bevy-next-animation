@@ -1,4 +1,4 @@
-use crate::{entity::EntityAnimations, plugin::NextAnimationTarget};
+use crate::{assets::EntityAnimations, plugin::NextAnimationTarget};
 use bevy::{prelude::*, utils::HashMap};
 
 #[derive(Bundle)]

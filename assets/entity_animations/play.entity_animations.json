@@ -1,0 +1,37 @@
+{
+    "test": {
+        "tracks": {
+            "TestA": {
+                "values": {
+                    "a": {
+                        "enabled": true,
+                        "frames": {
+                            "keyframes": {
+                                "aecd3277-3ca9-492a-b2af-44fec4e9624f": {
+                                    "id": "aecd3277-3ca9-492a-b2af-44fec4e9624f",
+                                    "location": 1,
+                                    "value": 0.0
+                                },
+                                "4c609e7d-f240-4ba3-82cb-229dd9739297": {
+                                    "id": "4c609e7d-f240-4ba3-82cb-229dd9739297",
+                                    "location": 0,
+                                    "value": 1.0
+                                }
+                            },
+                            "mode": "Constant",
+                            "frame_duration": 0.5,
+                            "frame_indexs": [
+                                "4c609e7d-f240-4ba3-82cb-229dd9739297",
+                                "aecd3277-3ca9-492a-b2af-44fec4e9624f"
+                            ]
+                        },
+                        "binding": {
+                            "path": "a",
+                            "value_type": "Bool"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,4 +1,5 @@
 use crate::{
+    assets::EntityAnimationsLoader,
     entity::{AnimationName, EntityAnimationContext, NextAnimation},
     prelude::EntityAnimations,
 };
@@ -123,6 +124,7 @@ impl Plugin for BevyNextAnimationPlugin {
                 .chain()
                 .before(TransformSystem::TransformPropagate),
         );
-        app.init_asset::<EntityAnimations>();
+        app.init_asset::<EntityAnimations>()
+            .init_asset_loader::<EntityAnimationsLoader>();
     }
 }

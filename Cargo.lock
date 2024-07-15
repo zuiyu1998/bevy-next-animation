@@ -308,6 +308,9 @@ name = "bevy-next-animation"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "serde",
+ "serde_json",
+ "thiserror",
  "uuid",
 ]
 

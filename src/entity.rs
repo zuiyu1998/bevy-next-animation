@@ -1,11 +1,12 @@
 use crate::track::EntityTrack;
-use crate::value::BoundValueCollection;
+use crate::{assets::EntityAnimations, value::BoundValueCollection};
 use bevy::{prelude::*, utils::HashMap};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
 pub struct ComponentShortTypePath(String);
 
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
 pub struct AnimationName(String);
 
 impl AnimationName {
@@ -20,13 +21,10 @@ impl ComponentShortTypePath {
     }
 }
 
-#[derive(Default, Clone, Deref)]
+#[derive(Default, Clone, Deref, Deserialize, Serialize)]
 pub struct EntityAnimation {
     pub tracks: HashMap<ComponentShortTypePath, EntityTrack>,
 }
-
-#[derive(Default, Asset, TypePath, Clone, Deref, DerefMut)]
-pub struct EntityAnimations(HashMap<AnimationName, EntityAnimation>);
 
 impl EntityAnimation {
     pub fn get_animation_pose(&self, dt: f32) -> AnimationPose {

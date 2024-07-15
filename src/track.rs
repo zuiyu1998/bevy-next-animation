@@ -1,11 +1,12 @@
 use bevy::utils::HashMap;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::value::{BoundValue, BoundValueCollection, TrackValue};
 
 use super::value::ValueBinding;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Deserialize, Serialize)]
 pub struct EntityTrack {
     pub values: HashMap<String, Track>,
 }
@@ -28,7 +29,7 @@ impl EntityTrack {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Track {
     enabled: bool,
     frames: TrackDataContainer,
@@ -63,7 +64,7 @@ impl Track {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct TrackDataContainer {
     //关键帧数据
     keyframes: HashMap<Uuid, Keyframe>,
@@ -115,12 +116,12 @@ impl TrackDataContainer {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub enum InterpolationMode {
     Constant,
 }
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Deserialize, Serialize)]
 pub struct Keyframe {
     pub id: Uuid,
     pub location: usize,

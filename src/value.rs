@@ -2,6 +2,7 @@ use bevy::{
     math::FloatExt,
     reflect::{DynamicStruct, Reflect, ReflectKind},
 };
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
 pub struct BoundValueCollection {
@@ -43,14 +44,14 @@ impl Default for BoundValueCollection {
 }
 
 ///可支持的关键帧数据类型
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub enum ValueType {
     Bool,
     Usize,
 }
 
 ///组件修改的字段路径和关键帧的数据类型
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ValueBinding {
     pub path: String,
     pub value_type: ValueType,
