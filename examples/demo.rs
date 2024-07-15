@@ -41,7 +41,7 @@ fn main() {
     app.run();
 }
 
-pub fn setup(mut commands: Commands, mut entity_animation_assets: ResMut<Assets<EntityAnimation>>) {
+pub fn setup(mut commands: Commands, mut animations_assets: ResMut<Assets<EntityAnimations>>) {
     commands.spawn(Camera2dBundle::default());
 
     let mut entity_track = EntityTrack::default();
@@ -62,26 +62,28 @@ pub fn setup(mut commands: Commands, mut entity_animation_assets: ResMut<Assets<
 
     let mut entity_animation = EntityAnimation::default();
 
-    entity_animation
-        .tracks
-        .insert(TestA::short_type_path().to_string(), entity_track);
+    entity_animation.tracks.insert(
+        ComponentShortTypePath::from_type_path::<TestA>(),
+        entity_track,
+    );
 
-    let handle = entity_animation_assets.add(entity_animation);
+    let mut animatiions = EntityAnimations::default();
+
+    animatiions.insert(AnimationName::new("test"), entity_animation);
+
+    let handle = animations_assets.add(animatiions);
 
     let entity = commands.spawn(TestA { a: false }).id();
 
-    let mut animation = NextAnimation::default();
-    animation.insert(entity, handle);
-
     let mut animation_player = NextAnimationPlayer::default();
-
-    animation_player
-        .animations
-        .insert("test".to_string(), animation);
 
     animation_player.play("test");
 
-    commands.entity(entity).insert(animation_player);
+    commands.entity(entity).insert((
+        animation_player,
+        NextAnimationTarget { player: entity },
+        handle,
+    ));
 }
 
 fn debug_test(test_a_q: Query<&TestA>) {

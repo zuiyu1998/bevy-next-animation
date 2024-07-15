@@ -1,16 +1,17 @@
 use crate::{
-    entity::{AnimationPose, EntityAnimation},
-    prelude::update_entity_animation,
+    entity::{AnimationName, EntityAnimationContext, NextAnimation},
+    prelude::EntityAnimations,
 };
-use bevy::{ecs::system::SystemState, prelude::*, utils::hashbrown::HashMap};
+use bevy::{ecs::system::SystemState, prelude::*};
 
-#[derive(Deref, Default, DerefMut)]
-pub struct NextAnimation(HashMap<Entity, Handle<EntityAnimation>>);
+#[derive(Debug, Component)]
+pub struct NextAnimationTarget {
+    pub player: Entity,
+}
 
 #[derive(Default, Component)]
 pub struct NextAnimationPlayer {
-    pub animations: HashMap<String, NextAnimation>,
-    pub current_animation: String,
+    pub current_animation: AnimationName,
     time: f32,
     state: AnimationState,
 }
@@ -25,7 +26,7 @@ pub enum AnimationState {
 
 impl NextAnimationPlayer {
     pub fn play(&mut self, animation_name: &str) {
-        self.current_animation = animation_name.to_string();
+        self.current_animation = AnimationName::new(animation_name);
         self.state = AnimationState::Playing;
         self.time = 0.0;
     }
@@ -34,65 +35,81 @@ impl NextAnimationPlayer {
         matches!(self.state, AnimationState::Playing)
     }
 
-    pub fn get_mapper(&self) -> Option<&NextAnimation> {
-        self.animations.get(&self.current_animation)
+    fn update(&mut self, dt: f32) {
+        self.time += dt;
     }
 
-    pub fn get_animation_pose(
-        &mut self,
-        dt: f32,
-        assets: &Assets<EntityAnimation>,
-    ) -> HashMap<Entity, AnimationPose> {
-        if self.is_playing() {
-            self.time = self.time + dt;
-        }
-
-        let mut map = HashMap::default();
-
-        if let Some(mapper) = self.get_mapper() {
-            for (entity, handle) in mapper.iter() {
-                if let Some(entity_animation) = assets.get(&handle.clone_weak()) {
-                    let pose = entity_animation.get_animation_pose(self.time);
-
-                    map.insert(*entity, pose);
-                }
-            }
-        } else {
-            warn!("{} animation not found.", self.current_animation);
-        }
-
-        map
+    fn get_time(&self) -> f32 {
+        self.time
     }
 }
 
-pub fn update_animation(world: &mut World) {
-    let mut state = SystemState::<(
-        Query<&mut NextAnimationPlayer>,
-        Res<Assets<EntityAnimation>>,
-        Res<Time>,
-        Res<AppTypeRegistry>,
-    )>::new(world);
-
-    let mut animations = vec![];
-
-    let (mut mapper_query, assets, time, registry) = state.get_mut(world);
-
-    let delta = time.delta_seconds();
+pub fn advance_animations(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut player_q: Query<&mut NextAnimationPlayer>,
+    mut animation_target_q: Query<(
+        &NextAnimationTarget,
+        &Handle<EntityAnimations>,
+        Option<&mut NextAnimation>,
+        Entity,
+    )>,
+    animations: Res<Assets<EntityAnimations>>,
+    registry: Res<AppTypeRegistry>,
+) {
+    let dt = time.delta_seconds();
 
     let registry = registry.clone();
 
-    for mut mapper in mapper_query.iter_mut() {
-        let animation = mapper.get_animation_pose(delta, &assets);
+    for (target, handle, animation, entity) in animation_target_q.iter_mut() {
+        if let Ok(mut player) = player_q.get_mut(target.player) {
+            if player.is_playing() {
+                player.update(dt);
 
-        animations.push(animation);
+                let dt = player.get_time();
+
+                if let Some(new_anmation) = NextAnimation::new(
+                    &registry,
+                    &animations,
+                    handle,
+                    &player.current_animation,
+                    dt,
+                ) {
+                    if let Some(mut animation) = animation {
+                        *animation = new_anmation;
+                    } else {
+                        commands.entity(entity).insert(new_anmation);
+                    }
+                } else {
+                    warn!("{:?} animation not found.", player.current_animation);
+                }
+            }
+        } else {
+            warn!("{} player entity not found.", target.player);
+        }
+    }
+}
+
+pub fn update_animations(world: &mut World) {
+    let mut state = SystemState::<Query<(Entity, &NextAnimation)>>::new(world);
+
+    let mut animations = vec![];
+
+    let animation_q = state.get(world);
+
+    for (entity, animation) in animation_q.iter() {
+        animations.push((entity, animation.clone()));
     }
 
-    for animation in animations.into_iter() {
-        for (entity, pose) in animation.into_iter() {
-            let entity_world = world.entity_mut(entity);
+    for (entity, animation) in animations.into_iter() {
+        let world = world.get_entity_mut(entity).unwrap();
 
-            update_entity_animation(entity_world, &registry, pose)
-        }
+        let context = EntityAnimationContext {
+            animation,
+            entity_world: world,
+        };
+
+        context.apply();
     }
 }
 
@@ -100,7 +117,12 @@ pub struct BevyNextAnimationPlugin;
 
 impl Plugin for BevyNextAnimationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_animation);
-        app.init_asset::<EntityAnimation>();
+        app.add_systems(
+            PostUpdate,
+            (advance_animations, update_animations)
+                .chain()
+                .before(TransformSystem::TransformPropagate),
+        );
+        app.init_asset::<EntityAnimations>();
     }
 }

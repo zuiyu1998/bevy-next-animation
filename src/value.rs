@@ -3,6 +3,7 @@ use bevy::{
     reflect::{DynamicStruct, Reflect, ReflectKind},
 };
 
+#[derive(Clone)]
 pub struct BoundValueCollection {
     pub values: Vec<BoundValue>,
     pub relect_kind: ReflectKind,
@@ -73,6 +74,7 @@ impl TrackValue {
 }
 
 ///用来修改组件的关键帧数据抽象
+#[derive(Clone)]
 pub struct BoundValue {
     pub binding: ValueBinding,
     pub value: TrackValue,

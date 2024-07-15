@@ -2,10 +2,31 @@ use crate::track::EntityTrack;
 use crate::value::BoundValueCollection;
 use bevy::{prelude::*, utils::HashMap};
 
-#[derive(Default, Asset, TypePath, Clone)]
-pub struct EntityAnimation {
-    pub tracks: HashMap<String, EntityTrack>,
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut)]
+pub struct ComponentShortTypePath(String);
+
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut)]
+pub struct AnimationName(String);
+
+impl AnimationName {
+    pub fn new(name: &str) -> Self {
+        AnimationName(name.to_string())
+    }
 }
+
+impl ComponentShortTypePath {
+    pub fn from_type_path<T: TypePath>() -> Self {
+        Self(T::short_type_path().to_string())
+    }
+}
+
+#[derive(Default, Clone, Deref)]
+pub struct EntityAnimation {
+    pub tracks: HashMap<ComponentShortTypePath, EntityTrack>,
+}
+
+#[derive(Default, Asset, TypePath, Clone, Deref, DerefMut)]
+pub struct EntityAnimations(HashMap<AnimationName, EntityAnimation>);
 
 impl EntityAnimation {
     pub fn get_animation_pose(&self, dt: f32) -> AnimationPose {
@@ -20,14 +41,14 @@ impl EntityAnimation {
     }
 }
 
-#[derive(Deref, DerefMut, Default)]
-pub struct AnimationPose(HashMap<String, BoundValueCollection>);
+#[derive(Deref, DerefMut, Default, Clone)]
+pub struct AnimationPose(HashMap<ComponentShortTypePath, BoundValueCollection>);
 
 impl AnimationPose {
     pub fn get_reflect_component_map(
         &self,
         registry: &AppTypeRegistry,
-    ) -> HashMap<String, ReflectComponent> {
+    ) -> HashMap<ComponentShortTypePath, ReflectComponent> {
         let mut reflect_component_map = HashMap::default();
 
         let registry = registry.read();
@@ -53,18 +74,48 @@ pub fn get_type_path<C: TypePath>() -> String {
     C::short_type_path().to_string()
 }
 
-pub fn update_entity_animation(
-    mut entity_world: EntityWorldMut,
-    registry: &AppTypeRegistry,
-    mut pose: AnimationPose,
-) {
-    let reflect_component_map = pose.get_reflect_component_map(registry);
+#[derive(Component, Clone)]
+pub struct NextAnimation {
+    reflect_component_map: HashMap<ComponentShortTypePath, ReflectComponent>,
+    pose: AnimationPose,
+}
 
-    for (type_id, reflect_component) in reflect_component_map.into_iter() {
-        let collection = pose.remove(&type_id).unwrap();
+impl NextAnimation {
+    pub fn new(
+        registry: &AppTypeRegistry,
+        animations: &Assets<EntityAnimations>,
+        handle: &Handle<EntityAnimations>,
+        active_name: &AnimationName,
+        dt: f32,
+    ) -> Option<Self> {
+        animations.get(handle).and_then(|animations| {
+            animations.get(active_name).and_then(|animation| {
+                let pose = animation.get_animation_pose(dt);
 
-        let component = collection.get_dynamic();
+                let reflect_component_map = pose.get_reflect_component_map(registry);
 
-        reflect_component.apply(&mut entity_world, &*component);
+                Some(NextAnimation {
+                    pose,
+                    reflect_component_map,
+                })
+            })
+        })
+    }
+}
+
+pub struct EntityAnimationContext<'a> {
+    pub entity_world: EntityWorldMut<'a>,
+    pub animation: NextAnimation,
+}
+
+impl<'a> EntityAnimationContext<'a> {
+    pub fn apply(mut self) {
+        for (type_apth, reflect_component) in self.animation.reflect_component_map.into_iter() {
+            let collection = self.animation.pose.remove(&type_apth).unwrap();
+
+            let component = collection.get_dynamic();
+
+            reflect_component.apply(&mut self.entity_world, &*component);
+        }
     }
 }
