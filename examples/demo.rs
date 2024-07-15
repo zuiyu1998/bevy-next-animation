@@ -67,13 +67,16 @@ pub fn setup(mut commands: Commands, mut animations_assets: ResMut<Assets<Entity
         entity_track,
     );
 
-    let mut animatiions = EntityAnimations::default();
+    let mut animations = EntityAnimations::default();
 
-    animatiions.insert(AnimationName::new("test"), entity_animation);
+    animations.insert(AnimationName::new("test"), entity_animation);
 
-    let handle = animations_assets.add(animatiions);
+    let handle = animations_assets.add(animations);
 
     let entity = commands.spawn(TestA { a: false }).id();
+
+    let mut builder = AnimationsBuilder::entity(entity);
+    builder.add_handle("self", handle);
 
     let mut animation_player = NextAnimationPlayer::default();
 
@@ -81,8 +84,7 @@ pub fn setup(mut commands: Commands, mut animations_assets: ResMut<Assets<Entity
 
     commands.entity(entity).insert((
         animation_player,
-        NextAnimationTarget { player: entity },
-        handle,
+        builder.get_animation_bundle("self").unwrap(),
     ));
 }
 
