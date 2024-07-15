@@ -111,7 +111,13 @@ impl<'a> EntityAnimationContext<'a> {
         for (type_apth, reflect_component) in self.animation.reflect_component_map.into_iter() {
             let collection = self.animation.pose.remove(&type_apth).unwrap();
 
-            let component = collection.get_dynamic();
+            let asset_server = self
+                .entity_world
+                .world()
+                .get_resource::<AssetServer>()
+                .unwrap();
+
+            let component = collection.get_dynamic(asset_server);
 
             reflect_component.apply(&mut self.entity_world, &*component);
         }

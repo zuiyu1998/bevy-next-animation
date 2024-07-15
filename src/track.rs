@@ -32,7 +32,7 @@ impl EntityTrack {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Track {
     enabled: bool,
-    frames: TrackDataContainer,
+    pub frames: TrackDataContainer,
     binding: ValueBinding,
 }
 
@@ -67,7 +67,7 @@ impl Track {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct TrackDataContainer {
     //关键帧数据
-    keyframes: HashMap<Uuid, Keyframe>,
+    pub keyframes: HashMap<Uuid, Keyframe>,
 
     //差值模式
     mode: InterpolationMode,
@@ -107,7 +107,7 @@ impl TrackDataContainer {
         match self.mode {
             InterpolationMode::Constant => {
                 if let Some(uuid) = self.frame_indexs[index_min] {
-                    Some(TrackValue(self.keyframes.get(&uuid).unwrap().value))
+                    Some(self.keyframes.get(&uuid).unwrap().value.clone())
                 } else {
                     None
                 }
@@ -125,11 +125,11 @@ pub enum InterpolationMode {
 pub struct Keyframe {
     pub id: Uuid,
     pub location: usize,
-    pub value: f32,
+    pub value: TrackValue,
 }
 
 impl Keyframe {
-    pub fn new(location: usize, value: f32) -> Self {
+    pub fn new(location: usize, value: TrackValue) -> Self {
         Self {
             location,
             value,
@@ -139,9 +139,11 @@ impl Keyframe {
 }
 
 mod test {
+
     #[test]
     fn test_track() {
         use super::{Keyframe, Track, ValueBinding};
+        use crate::prelude::TrackValue;
         use crate::value::ValueType;
 
         let mut track = Track::new(
@@ -153,8 +155,8 @@ mod test {
             2,
         );
 
-        track.add_keyframe(Keyframe::new(1, 0.0));
-        track.add_keyframe(Keyframe::new(0, 1.0));
+        track.add_keyframe(Keyframe::new(1, TrackValue::Number(0.0)));
+        track.add_keyframe(Keyframe::new(0, TrackValue::Number(1.0)));
 
         let bound_value = track.fetch(0.0);
 
@@ -162,18 +164,18 @@ mod test {
 
         let bound_value = bound_value.unwrap();
 
-        assert_eq!(bound_value.value.0, 1.0);
+        assert_eq!(bound_value.value, TrackValue::Number(1.0));
 
         let bound_value = track.fetch(0.5);
 
         let bound_value = bound_value.unwrap();
 
-        assert_eq!(bound_value.value.0, 0.0);
+        assert_eq!(bound_value.value, TrackValue::Number(0.0));
 
         let bound_value = track.fetch(1.0);
 
         let bound_value = bound_value.unwrap();
 
-        assert_eq!(bound_value.value.0, 1.0);
+        assert_eq!(bound_value.value, TrackValue::Number(1.0));
     }
 }

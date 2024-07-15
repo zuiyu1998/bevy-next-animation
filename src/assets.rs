@@ -38,7 +38,8 @@ impl AssetLoader for EntityAnimationsLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
-        let custom_asset = serde_json::from_slice(&bytes)?;
+        let custom_asset = serde_json::from_slice::<EntityAnimations>(&bytes)?;
+
         Ok(custom_asset)
     }
 
