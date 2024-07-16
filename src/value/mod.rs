@@ -82,12 +82,14 @@ impl BoundValue {
     }
 
     pub fn get_reflect_value(&self, asset_server: &AssetServer) -> Option<Box<dyn Reflect>> {
-        match self.binding.value_type {
-            ValueType::Bool => bool::get_reflect_value(&self.value, asset_server),
-            ValueType::Usize => usize::get_reflect_value(&self.value, asset_server),
-            ValueType::Asset => {
-                AnimationValueAssetPath::get_reflect_value(&self.value, asset_server)
-            }
-        }
+        // match self.binding.value_type {
+        //     ValueType::Bool => bool::get_reflect_value(&self.value, asset_server),
+        //     ValueType::Usize => usize::get_reflect_value(&self.value, asset_server),
+        //     ValueType::Asset => {
+        //         AnimationValueAssetPath::get_reflect_value(&self.value, asset_server)
+        //     }
+        // }
+
+        todo!()
     }
 }

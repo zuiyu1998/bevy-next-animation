@@ -1,6 +1,7 @@
 use crate::{
     assets::EntityAnimationsLoader,
-    entity::{AnimationName, EntityAnimationContext, NextAnimation},
+    core::AnimationName,
+    entity::{EntityAnimationContext, NextAnimation},
     prelude::EntityAnimations,
 };
 use bevy::{ecs::system::SystemState, prelude::*};
@@ -57,10 +58,11 @@ pub fn advance_animations(
     )>,
     animations: Res<Assets<EntityAnimations>>,
     registry: Res<AppTypeRegistry>,
+    asset_server: Res<AssetServer>,
 ) {
     let dt = time.delta_seconds();
 
-    let registry = registry.clone();
+    let registry = registry.read();
 
     for (target, handle, animation, entity) in animation_target_q.iter_mut() {
         if let Ok(mut player) = player_q.get_mut(target.player) {
@@ -71,6 +73,7 @@ pub fn advance_animations(
 
                 if let Some(new_anmation) = NextAnimation::new(
                     &registry,
+                    &asset_server,
                     &animations,
                     handle,
                     &player.current_animation,

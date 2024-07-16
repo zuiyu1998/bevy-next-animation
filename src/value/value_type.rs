@@ -1,6 +1,27 @@
 use super::TrackValue;
-use bevy::{asset::AssetServer, prelude::Reflect, render::texture::Image};
+use bevy::{
+    app::App,
+    asset::AssetServer,
+    prelude::Reflect,
+    reflect::{FromType, TypePath},
+};
 use serde::{Deserialize, Serialize};
+
+pub trait AnimationExt {
+    fn register_animation<T: AnimatinValue>(&mut self);
+}
+
+impl AnimationExt for App {
+    fn register_animation<T: AnimatinValue>(&mut self) {
+        self.register_type_data::<T, AnimationComponentFns>();
+    }
+}
+
+impl<A: AnimatinValue> FromType<A> for AnimationComponentFns {
+    fn from_type() -> Self {
+        todo!()
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Reflect, Deserialize, Serialize, PartialOrd, Hash, Eq)]
 pub struct AnimationValueAssetPath(pub String);
@@ -13,33 +34,24 @@ pub enum ValueType {
     Asset,
 }
 
-pub trait AnimatinValue {
-    fn get_reflect_value(
-        value: &TrackValue,
-        _asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>>;
+#[derive(Clone)]
+pub struct AnimationComponentFns {
+    pub reflect: fn(&TrackValue, asset_server: &AssetServer) -> Option<Box<dyn Reflect>>,
 }
 
-impl AnimatinValue for AnimationValueAssetPath {
+impl AnimationComponentFns {
+    pub fn new<A: AnimatinValue>() -> Self {
+        AnimationComponentFns {
+            reflect: A::get_reflect_value,
+        }
+    }
+}
+
+pub trait AnimatinValue: Reflect + TypePath {
     fn get_reflect_value(
         value: &TrackValue,
         asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
-        match value {
-            TrackValue::Asset(path) => {
-                if let Some(handle) = asset_server.get_handle::<Image>(&path.0) {
-                    let reflect: Box<dyn Reflect> = Box::new(handle);
-
-                    return Some(reflect);
-                } else {
-                    None
-                }
-            }
-            _ => {
-                return None;
-            }
-        }
-    }
+    ) -> Option<Box<dyn Reflect>>;
 }
 
 impl AnimatinValue for bool {

@@ -1,23 +1,35 @@
-use crate::track::EntityTrack;
-use crate::{assets::EntityAnimations, value::BoundValueCollection};
-use bevy::{prelude::*, utils::HashMap};
+use crate::{
+    assets::EntityAnimations, core::AnimationName, core::ComponentShortTypePath,
+    track::EntityTrack, value::AnimationComponentFns, value::BoundValueCollection,
+    value::ValueBinding,
+};
+use bevy::{
+    prelude::*,
+    reflect::{ReflectKind, TypeRegistry},
+    utils::HashMap,
+};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
-pub struct ComponentShortTypePath(String);
-
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
-pub struct AnimationName(String);
-
-impl AnimationName {
-    pub fn new(name: &str) -> Self {
-        AnimationName(name.to_string())
-    }
+#[derive(Clone)]
+pub struct ReflectValueCollection {
+    pub values: Vec<ReflecBoundValue>,
+    pub relect_kind: ReflectKind,
 }
 
-impl ComponentShortTypePath {
-    pub fn from_type_path<T: TypePath>() -> Self {
-        Self(T::short_type_path().to_string())
+pub struct ReflecBoundValue {
+    pub binding: ValueBinding,
+    pub value: Option<Box<dyn Reflect>>,
+}
+
+impl Clone for ReflecBoundValue {
+    fn clone(&self) -> Self {
+        ReflecBoundValue {
+            binding: self.binding.clone(),
+            value: self
+                .value
+                .as_ref()
+                .and_then(|value| Some(value.clone_value())),
+        }
     }
 }
 
@@ -27,12 +39,45 @@ pub struct EntityAnimation {
 }
 
 impl EntityAnimation {
-    pub fn get_animation_pose(&self, dt: f32) -> AnimationPose {
+    pub fn get_animation_pose(
+        &self,
+        dt: f32,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> AnimationPose {
         let mut pose = AnimationPose::default();
 
         for (type_path, track) in self.tracks.iter() {
             let collection = track.fetch(dt);
-            pose.insert(type_path.clone(), collection);
+
+            if let Some(registraion) = registry.get_with_short_type_path(type_path) {
+                if let Some(fns) = registraion.data::<AnimationComponentFns>() {
+                    let mut values = vec![];
+
+                    for v in collection.values.iter() {
+                        let reflect = (fns.reflect)(&v.value, asset_server);
+
+                        let bound = ReflecBoundValue {
+                            value: reflect,
+                            binding: v.binding.clone(),
+                        };
+
+                        values.push(bound);
+                    }
+
+                    let collection = ReflectValueCollection {
+                        values,
+                        relect_kind: collection.relect_kind,
+                    };
+
+                    pose.insert(type_path.clone(), collection);
+                } else {
+                    info!(
+                        "type {:?} not found AnimationComponentFns",
+                        registraion.type_info().type_path_table().ident()
+                    );
+                }
+            }
         }
 
         pose
@@ -40,33 +85,7 @@ impl EntityAnimation {
 }
 
 #[derive(Deref, DerefMut, Default, Clone)]
-pub struct AnimationPose(HashMap<ComponentShortTypePath, BoundValueCollection>);
-
-impl AnimationPose {
-    pub fn get_reflect_component_map(
-        &self,
-        registry: &AppTypeRegistry,
-    ) -> HashMap<ComponentShortTypePath, ReflectComponent> {
-        let mut reflect_component_map = HashMap::default();
-
-        let registry = registry.read();
-
-        for type_path in self.keys() {
-            if let Some(registraion) = registry.get_with_short_type_path(type_path) {
-                if let Some(reflect_component) = registraion.data::<ReflectComponent>() {
-                    reflect_component_map.insert(type_path.clone(), reflect_component.clone());
-                } else {
-                    info!(
-                        "type {:?} not found ReflectComponent",
-                        registraion.type_info().type_path_table().ident()
-                    );
-                }
-            }
-        }
-
-        reflect_component_map
-    }
-}
+pub struct AnimationPose(HashMap<ComponentShortTypePath, ReflectValueCollection>);
 
 pub fn get_type_path<C: TypePath>() -> String {
     C::short_type_path().to_string()
@@ -74,13 +93,13 @@ pub fn get_type_path<C: TypePath>() -> String {
 
 #[derive(Component, Clone)]
 pub struct NextAnimation {
-    reflect_component_map: HashMap<ComponentShortTypePath, ReflectComponent>,
     pose: AnimationPose,
 }
 
 impl NextAnimation {
     pub fn new(
-        registry: &AppTypeRegistry,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
         animations: &Assets<EntityAnimations>,
         handle: &Handle<EntityAnimations>,
         active_name: &AnimationName,
@@ -88,14 +107,9 @@ impl NextAnimation {
     ) -> Option<Self> {
         animations.get(handle).and_then(|animations| {
             animations.get(active_name).and_then(|animation| {
-                let pose = animation.get_animation_pose(dt);
+                let pose = animation.get_animation_pose(dt, registry, asset_server);
 
-                let reflect_component_map = pose.get_reflect_component_map(registry);
-
-                Some(NextAnimation {
-                    pose,
-                    reflect_component_map,
-                })
+                Some(NextAnimation { pose })
             })
         })
     }
@@ -108,18 +122,9 @@ pub struct EntityAnimationContext<'a> {
 
 impl<'a> EntityAnimationContext<'a> {
     pub fn apply(mut self) {
-        for (type_apth, reflect_component) in self.animation.reflect_component_map.into_iter() {
-            let collection = self.animation.pose.remove(&type_apth).unwrap();
+        for (type_apth, collection) in self.animation.pose.into_iter() {
 
-            let asset_server = self
-                .entity_world
-                .world()
-                .get_resource::<AssetServer>()
-                .unwrap();
-
-            let component = collection.get_dynamic(asset_server);
-
-            reflect_component.apply(&mut self.entity_world, &*component);
+            // reflect_component.apply(&mut self.entity_world, &*component);
         }
     }
 }

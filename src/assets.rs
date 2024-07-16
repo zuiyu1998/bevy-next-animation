@@ -1,4 +1,4 @@
-use crate::entity::{AnimationName, EntityAnimation};
+use crate::{core::AnimationName, entity::EntityAnimation};
 use bevy::{
     asset::{io::Reader, AssetLoader, AsyncReadExt, LoadContext},
     prelude::*,
