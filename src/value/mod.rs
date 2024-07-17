@@ -8,10 +8,11 @@ use bevy::{
     app::App,
     asset::AssetServer,
     log::warn,
-    reflect::{DynamicStruct, Reflect, ReflectKind, TypeRegistry},
+    reflect::{DynamicStruct, Reflect, TypeRegistry},
 };
 use serde::{Deserialize, Serialize};
 
+use crate::core::ComponentReflectKind;
 use crate::prelude::ShortTypePath;
 
 pub trait AnimationExt {
@@ -32,22 +33,42 @@ impl AnimationExt for App {
 }
 
 #[derive(Clone)]
-pub struct BoundValueCollection {
-    pub values: Vec<BoundValue>,
-    pub relect_kind: ReflectKind,
+pub struct BoundComponentValue {
+    pub data: BoundValueData,
+    pub relect_kind: ComponentReflectKind,
 }
 
-impl BoundValueCollection {
+#[derive(Clone)]
+pub enum BoundValueData {
+    Single(BoundValue),
+    Multiple(Vec<BoundValue>),
+}
+
+impl BoundComponentValue {
     pub fn get_dynamic(
         &self,
         registry: &TypeRegistry,
         asset_server: &AssetServer,
-    ) -> Box<dyn Reflect> {
+    ) -> Option<Box<dyn Reflect>> {
         match self.relect_kind {
-            ReflectKind::Struct => self.get_dynamic_struct(registry, asset_server),
+            ComponentReflectKind::Struct => self.get_dynamic_struct(registry, asset_server),
+            ComponentReflectKind::Enum => self.get_dynamic_enum(registry, asset_server),
 
             _ => {
                 todo!()
+            }
+        }
+    }
+
+    pub fn get_dynamic_enum(
+        &self,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> Option<Box<dyn Reflect>> {
+        match &self.data {
+            BoundValueData::Single(v) => v.get_relect_value(registry, asset_server),
+            BoundValueData::Multiple(_) => {
+                return None;
             }
         }
     }
@@ -56,38 +77,35 @@ impl BoundValueCollection {
         &self,
         registry: &TypeRegistry,
         asset_server: &AssetServer,
-    ) -> Box<dyn Reflect> {
-        let mut dynamic = DynamicStruct::default();
-
-        for v in self.values.iter() {
-            if let Some(registraion) = registry.get_with_short_type_path(&v.binding.value_type) {
-                if let Some(fns) = registraion.data::<AnimateValueFns>() {
-                    if let Some(field) = (fns.reflect)(&v.value, asset_server) {
-                        dynamic.insert_boxed(v.binding.path.clone(), field);
-                    } else {
-                        warn!(
-                            "{:?} not impl AnimatinValue trait.",
-                            registraion.type_info().type_path_table().ident()
-                        );
+    ) -> Option<Box<dyn Reflect>> {
+        match &self.data {
+            BoundValueData::Single(v) => v.get_relect_value(registry, asset_server),
+            BoundValueData::Multiple(values) => {
+                let mut dynamic = DynamicStruct::default();
+                for v in values.iter() {
+                    if let Some(registraion) =
+                        registry.get_with_short_type_path(&v.binding.component_type)
+                    {
+                        if let Some(fns) = registraion.data::<AnimateValueFns>() {
+                            if let Some(field) = (fns.reflect)(&v.value, asset_server) {
+                                dynamic.insert_boxed(v.binding.path.clone().unwrap(), field);
+                            } else {
+                                warn!(
+                                    "{:?} not impl AnimatinValue trait.",
+                                    registraion.type_info().type_path_table().ident()
+                                );
+                            }
+                        } else {
+                            warn!(
+                                "{:?} not found AnimationValueFns.",
+                                registraion.type_info().type_path_table().ident()
+                            );
+                        }
                     }
-                } else {
-                    warn!(
-                        "{:?} not found AnimationValueFns.",
-                        registraion.type_info().type_path_table().ident()
-                    );
                 }
+
+                Some(Box::new(dynamic))
             }
-        }
-
-        Box::new(dynamic)
-    }
-}
-
-impl Default for BoundValueCollection {
-    fn default() -> Self {
-        Self {
-            values: vec![],
-            relect_kind: ReflectKind::Struct,
         }
     }
 }
@@ -95,8 +113,8 @@ impl Default for BoundValueCollection {
 ///组件修改的字段路径和关键帧的数据类型
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ValueBinding {
-    pub path: String,
-    pub value_type: ShortTypePath,
+    pub path: Option<String>,
+    pub component_type: ShortTypePath,
 }
 
 ///原始的关键帧数据
@@ -124,5 +142,34 @@ impl BoundValue {
     pub fn blend_with(&mut self, other: &Self, weight: f32) {
         assert_eq!(self.binding.path, other.binding.path);
         self.value.blend_with(&other.value, weight);
+    }
+
+    pub fn get_relect_value(
+        &self,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> Option<Box<dyn Reflect>> {
+        if let Some(registraion) = registry.get_with_short_type_path(&self.binding.component_type) {
+            if let Some(fns) = registraion.data::<AnimateValueFns>() {
+                if let Some(field) = (fns.reflect)(&self.value, asset_server) {
+                    return Some(field);
+                } else {
+                    warn!(
+                        "{:?} not impl AnimatinValue trait.",
+                        registraion.type_info().type_path_table().ident()
+                    );
+
+                    return None;
+                }
+            } else {
+                warn!(
+                    "{:?} not found AnimationValueFns.",
+                    registraion.type_info().type_path_table().ident()
+                );
+                return None;
+            }
+        }
+
+        return None;
     }
 }

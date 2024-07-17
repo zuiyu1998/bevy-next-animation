@@ -56,17 +56,17 @@ impl EntityAnimation {
         for (type_path, track) in self.tracks.iter() {
             if let Some(registraion) = registry.get_with_short_type_path(&type_path) {
                 if let Some(apply) = registraion.data::<AnimateComponentFns>() {
-                    let collection = track.fetch(dt);
-
-                    let reflect = collection.get_dynamic(registry, asset_server);
-
-                    pose.insert(
-                        type_path.clone(),
-                        ReflectComponent {
-                            reflect,
-                            apply: apply.clone(),
-                        },
-                    );
+                    if let Some(collection) = track.fetch(dt) {
+                        if let Some(reflect) = collection.get_dynamic(registry, asset_server) {
+                            pose.insert(
+                                type_path.clone(),
+                                ReflectComponent {
+                                    reflect,
+                                    apply: apply.clone(),
+                                },
+                            );
+                        }
+                    }
                 } else {
                     warn!("{:?} not register_animate_component.", type_path);
                 }

@@ -1,6 +1,19 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Deserialize, Serialize)]
+pub enum ComponentReflectKind {
+    Struct,
+    TupleStruct,
+    Tuple,
+    List,
+    Array,
+    Map,
+    Enum,
+    Value,
+    None,
+}
+
 #[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
 pub struct AnimationName(String);
 
