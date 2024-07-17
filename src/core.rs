@@ -10,7 +10,20 @@ impl AnimationName {
     }
 }
 
-#[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
+#[derive(
+    Debug,
+    Default,
+    Hash,
+    PartialEq,
+    Eq,
+    Clone,
+    Deref,
+    DerefMut,
+    Deserialize,
+    Serialize,
+    Reflect,
+    PartialOrd,
+)]
 pub struct ShortTypePath(String);
 
 impl ShortTypePath {

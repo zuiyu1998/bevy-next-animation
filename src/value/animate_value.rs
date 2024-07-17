@@ -1,6 +1,8 @@
+use crate::prelude::ShortTypePath;
+
 use super::TrackValue;
 use bevy::{
-    asset::AssetServer,
+    asset::{Asset, AssetServer, Handle},
     prelude::Reflect,
     reflect::{FromType, TypePath},
 };
@@ -15,7 +17,10 @@ impl<A: AnimateValue> FromType<A> for AnimateValueFns {
 }
 
 #[derive(Clone, Debug, PartialEq, Reflect, Deserialize, Serialize, PartialOrd, Hash, Eq)]
-pub struct AnimationValueAssetPath(pub String);
+pub struct AnimationValueAssetPath {
+    pub path: String,
+    pub type_path: ShortTypePath,
+}
 
 #[derive(Clone)]
 pub struct AnimateValueFns {
@@ -58,6 +63,28 @@ impl AnimateValue for usize {
     ) -> Option<Box<dyn Reflect>> {
         match value {
             TrackValue::Number(number) => return Some(Box::new(*number as usize)),
+            _ => {
+                return None;
+            }
+        }
+    }
+}
+
+impl<A: Asset> AnimateValue for Handle<A> {
+    fn get_reflect_value(
+        value: &TrackValue,
+        asset_server: &AssetServer,
+    ) -> Option<Box<dyn Reflect>> {
+        match value {
+            TrackValue::Asset(asset) => {
+                if asset.type_path != ShortTypePath::from_type_path::<Self>() {
+                    return None;
+                } else {
+                    let handle: Self = asset_server.load(asset.path.clone());
+
+                    return Some(Box::new(handle));
+                }
+            }
             _ => {
                 return None;
             }

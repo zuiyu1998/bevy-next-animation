@@ -1,9 +1,9 @@
 {
     "idle": {
         "tracks": {
-            "TestA": {
+            "TextureAtlas": {
                 "values": {
-                    "a": {
+                    "index": {
                         "enabled": true,
                         "frames": {
                             "keyframes": {
@@ -20,21 +20,64 @@
                                     "value": {
                                         "Number": 1.0
                                     }
+                                },
+                                "1917ca18-6b4d-4558-886c-411d60af5d77": {
+                                    "id": "1917ca18-6b4d-4558-886c-411d60af5d77",
+                                    "location": 2,
+                                    "value": {
+                                        "Number": 2.0
+                                    }
+                                },
+                                "c9d0e481-6ee9-4db0-8118-31b7d8a1f8a6": {
+                                    "id": "c9d0e481-6ee9-4db0-8118-31b7d8a1f8a6",
+                                    "location": 3,
+                                    "value": {
+                                        "Number": 3.0
+                                    }
+                                },
+                                "7b57b29a-868b-4f1d-95c0-c28005c9b94c": {
+                                    "id": "7b57b29a-868b-4f1d-95c0-c28005c9b94c",
+                                    "location": 4,
+                                    "value": {
+                                        "Number": 4.0
+                                    }
+                                },
+                                "65dd8e7c-f780-4fd7-b3f4-75bc55bcdb0b": {
+                                    "id": "65dd8e7c-f780-4fd7-b3f4-75bc55bcdb0b",
+                                    "location": 5,
+                                    "value": {
+                                        "Number": 5.0
+                                    }
+                                },
+                                "4f23677c-95e3-4a73-985b-26b004836ab7": {
+                                    "id": "4f23677c-95e3-4a73-985b-26b004836ab7",
+                                    "location": 6,
+                                    "value": {
+                                        "Number": 6.0
+                                    }
                                 }
                             },
                             "mode": "Constant",
                             "frame_duration": 0.1,
                             "frame_indexs": [
                                 "cbe3f21b-082b-473d-a888-beab8bcda35c",
-                                "a55833c5-383b-4a08-bff7-0f8972590734"
+                                "a55833c5-383b-4a08-bff7-0f8972590734",
+                                "1917ca18-6b4d-4558-886c-411d60af5d77",
+                                "c9d0e481-6ee9-4db0-8118-31b7d8a1f8a6",
+                                "7b57b29a-868b-4f1d-95c0-c28005c9b94c",
+                                "65dd8e7c-f780-4fd7-b3f4-75bc55bcdb0b",
+                                "4f23677c-95e3-4a73-985b-26b004836ab7"
                             ]
                         },
                         "binding": {
-                            "path": "a",
-                            "value_type": "bool"
+                            "path": "index",
+                            "value_type": "usize"
                         }
                     }
                 }
+            },
+            "Handle<Image>": {
+                "values": {}
             }
         }
     }
