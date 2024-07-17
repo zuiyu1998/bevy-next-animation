@@ -6,26 +6,35 @@ use crate::value::{BoundValue, BoundValueCollection, TrackValue};
 
 use super::value::ValueBinding;
 
-#[derive(Default, Clone, Deserialize, Serialize)]
-pub struct EntityTrack {
-    pub values: HashMap<String, Track>,
+#[derive(Clone, Deserialize, Serialize)]
+pub enum ComponentTrack {
+    Single(SingleComponentTrack),
+    Multiple(MultipleSingleComponentTrack),
 }
 
-impl EntityTrack {
+// impl AnimationValue
+#[derive(Clone, Deserialize, Serialize)]
+pub struct SingleComponentTrack(pub Track);
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct MultipleSingleComponentTrack(pub HashMap<String, Track>);
+
+impl ComponentTrack {
     pub fn add_track(&mut self, track: Track) {
-        self.values.insert(track.path(), track);
+        todo!()
     }
 
-    pub(crate) fn fetch(&self, time: f32) -> BoundValueCollection {
-        let mut collection = BoundValueCollection::default();
+    pub(crate) fn fetch(&self, _time: f32) -> BoundValueCollection {
+        todo!()
+        // let mut collection = BoundValueCollection::default();
 
-        for track in self.values.values() {
-            if let Some(bound_value) = track.fetch(time) {
-                collection.values.push(bound_value);
-            }
-        }
+        // for track in self.values.values() {
+        //     if let Some(bound_value) = track.fetch(time) {
+        //         collection.values.push(bound_value);
+        //     }
+        // }
 
-        collection
+        // collection
     }
 }
 

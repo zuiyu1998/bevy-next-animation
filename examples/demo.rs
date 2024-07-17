@@ -52,7 +52,7 @@ pub fn setup(
     track.add_keyframe(Keyframe::new(0, TrackValue::Number(0.0)));
     track.add_keyframe(Keyframe::new(1, TrackValue::Number(1.0)));
 
-    let mut entity_track = EntityTrack::default();
+    let mut entity_track = ComponentTrack::default();
 
     entity_track.add_track(track);
 

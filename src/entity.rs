@@ -2,7 +2,7 @@ use crate::{
     assets::EntityAnimations,
     core::{AnimationName, ShortTypePath},
     prelude::AnimateComponentFns,
-    track::EntityTrack,
+    track::ComponentTrack,
     value::ValueBinding,
 };
 use bevy::{prelude::*, reflect::TypeRegistry, utils::HashMap};
@@ -41,7 +41,7 @@ impl Clone for ReflecBoundValue {
 
 #[derive(Default, Clone, Deref, Deserialize, Serialize)]
 pub struct EntityAnimation {
-    pub tracks: HashMap<ShortTypePath, EntityTrack>,
+    pub tracks: HashMap<ShortTypePath, ComponentTrack>,
 }
 
 impl EntityAnimation {
