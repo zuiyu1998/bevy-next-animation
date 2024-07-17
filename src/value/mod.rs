@@ -1,12 +1,35 @@
-mod value_type;
+mod animate_components;
+mod animate_value;
 
-pub use value_type::*;
+pub use animate_components::*;
+pub use animate_value::*;
 
 use bevy::{
+    app::App,
     asset::AssetServer,
-    reflect::{DynamicStruct, Reflect, ReflectKind},
+    log::warn,
+    reflect::{DynamicStruct, Reflect, ReflectKind, TypeRegistry},
 };
 use serde::{Deserialize, Serialize};
+
+use crate::prelude::ShortTypePath;
+
+pub trait AnimationExt {
+    fn register_animate_value<T: AnimateValue>(&mut self) -> &mut Self;
+    fn register_animate_component<T: AnimateComponent>(&mut self) -> &mut Self;
+}
+
+impl AnimationExt for App {
+    fn register_animate_value<T: AnimateValue>(&mut self) -> &mut Self {
+        self.register_type_data::<T, AnimateValueFns>();
+        self
+    }
+
+    fn register_animate_component<T: AnimateComponent>(&mut self) -> &mut Self {
+        self.register_type_data::<T, AnimateComponentFns>();
+        self
+    }
+}
 
 #[derive(Clone)]
 pub struct BoundValueCollection {
@@ -15,9 +38,13 @@ pub struct BoundValueCollection {
 }
 
 impl BoundValueCollection {
-    pub fn get_dynamic(&self, asset_server: &AssetServer) -> Box<dyn Reflect> {
+    pub fn get_dynamic(
+        &self,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> Box<dyn Reflect> {
         match self.relect_kind {
-            ReflectKind::Struct => self.get_dynamic_struct(asset_server),
+            ReflectKind::Struct => self.get_dynamic_struct(registry, asset_server),
 
             _ => {
                 todo!()
@@ -25,12 +52,30 @@ impl BoundValueCollection {
         }
     }
 
-    pub fn get_dynamic_struct(&self, asset_server: &AssetServer) -> Box<dyn Reflect> {
+    pub fn get_dynamic_struct(
+        &self,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> Box<dyn Reflect> {
         let mut dynamic = DynamicStruct::default();
 
-        for value in self.values.iter() {
-            if let Some(reflect) = value.get_reflect_value(asset_server) {
-                dynamic.insert_boxed(value.binding.path.clone(), reflect);
+        for v in self.values.iter() {
+            if let Some(registraion) = registry.get_with_short_type_path(&v.binding.value_type) {
+                if let Some(fns) = registraion.data::<AnimateValueFns>() {
+                    if let Some(field) = (fns.reflect)(&v.value, asset_server) {
+                        dynamic.insert_boxed(v.binding.path.clone(), field);
+                    } else {
+                        warn!(
+                            "{:?} not impl AnimatinValue trait.",
+                            registraion.type_info().type_path_table().ident()
+                        );
+                    }
+                } else {
+                    warn!(
+                        "{:?} not found AnimationValueFns.",
+                        registraion.type_info().type_path_table().ident()
+                    );
+                }
             }
         }
 
@@ -51,7 +96,7 @@ impl Default for BoundValueCollection {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ValueBinding {
     pub path: String,
-    pub value_type: ValueType,
+    pub value_type: ShortTypePath,
 }
 
 ///原始的关键帧数据
@@ -79,17 +124,5 @@ impl BoundValue {
     pub fn blend_with(&mut self, other: &Self, weight: f32) {
         assert_eq!(self.binding.path, other.binding.path);
         self.value.blend_with(&other.value, weight);
-    }
-
-    pub fn get_reflect_value(&self, asset_server: &AssetServer) -> Option<Box<dyn Reflect>> {
-        // match self.binding.value_type {
-        //     ValueType::Bool => bool::get_reflect_value(&self.value, asset_server),
-        //     ValueType::Usize => usize::get_reflect_value(&self.value, asset_server),
-        //     ValueType::Asset => {
-        //         AnimationValueAssetPath::get_reflect_value(&self.value, asset_server)
-        //     }
-        // }
-
-        todo!()
     }
 }

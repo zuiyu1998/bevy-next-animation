@@ -1,19 +1,25 @@
 use crate::{
-    assets::EntityAnimations, core::AnimationName, core::ComponentShortTypePath,
-    track::EntityTrack, value::AnimationComponentFns, value::BoundValueCollection,
+    assets::EntityAnimations,
+    core::{AnimationName, ShortTypePath},
+    prelude::AnimateComponentFns,
+    track::EntityTrack,
     value::ValueBinding,
 };
-use bevy::{
-    prelude::*,
-    reflect::{ReflectKind, TypeRegistry},
-    utils::HashMap,
-};
+use bevy::{prelude::*, reflect::TypeRegistry, utils::HashMap};
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
-pub struct ReflectValueCollection {
-    pub values: Vec<ReflecBoundValue>,
-    pub relect_kind: ReflectKind,
+pub struct ReflectComponent {
+    pub reflect: Box<dyn Reflect>,
+    pub apply: AnimateComponentFns,
+}
+
+impl Clone for ReflectComponent {
+    fn clone(&self) -> Self {
+        ReflectComponent {
+            reflect: self.reflect.clone_value(),
+            apply: self.apply.clone(),
+        }
+    }
 }
 
 pub struct ReflecBoundValue {
@@ -35,7 +41,7 @@ impl Clone for ReflecBoundValue {
 
 #[derive(Default, Clone, Deref, Deserialize, Serialize)]
 pub struct EntityAnimation {
-    pub tracks: HashMap<ComponentShortTypePath, EntityTrack>,
+    pub tracks: HashMap<ShortTypePath, EntityTrack>,
 }
 
 impl EntityAnimation {
@@ -48,35 +54,24 @@ impl EntityAnimation {
         let mut pose = AnimationPose::default();
 
         for (type_path, track) in self.tracks.iter() {
-            let collection = track.fetch(dt);
+            if let Some(registraion) = registry.get_with_short_type_path(&type_path) {
+                if let Some(apply) = registraion.data::<AnimateComponentFns>() {
+                    let collection = track.fetch(dt);
 
-            if let Some(registraion) = registry.get_with_short_type_path(type_path) {
-                if let Some(fns) = registraion.data::<AnimationComponentFns>() {
-                    let mut values = vec![];
+                    let reflect = collection.get_dynamic(registry, asset_server);
 
-                    for v in collection.values.iter() {
-                        let reflect = (fns.reflect)(&v.value, asset_server);
-
-                        let bound = ReflecBoundValue {
-                            value: reflect,
-                            binding: v.binding.clone(),
-                        };
-
-                        values.push(bound);
-                    }
-
-                    let collection = ReflectValueCollection {
-                        values,
-                        relect_kind: collection.relect_kind,
-                    };
-
-                    pose.insert(type_path.clone(), collection);
-                } else {
-                    info!(
-                        "type {:?} not found AnimationComponentFns",
-                        registraion.type_info().type_path_table().ident()
+                    pose.insert(
+                        type_path.clone(),
+                        ReflectComponent {
+                            reflect,
+                            apply: apply.clone(),
+                        },
                     );
+                } else {
+                    warn!("{:?} not register_animate_component.", type_path);
                 }
+            } else {
+                warn!("{:?} not register_type.", type_path);
             }
         }
 
@@ -85,11 +80,7 @@ impl EntityAnimation {
 }
 
 #[derive(Deref, DerefMut, Default, Clone)]
-pub struct AnimationPose(HashMap<ComponentShortTypePath, ReflectValueCollection>);
-
-pub fn get_type_path<C: TypePath>() -> String {
-    C::short_type_path().to_string()
-}
+pub struct AnimationPose(pub HashMap<ShortTypePath, ReflectComponent>);
 
 #[derive(Component, Clone)]
 pub struct NextAnimation {
@@ -122,9 +113,8 @@ pub struct EntityAnimationContext<'a> {
 
 impl<'a> EntityAnimationContext<'a> {
     pub fn apply(mut self) {
-        for (type_apth, collection) in self.animation.pose.into_iter() {
-
-            // reflect_component.apply(&mut self.entity_world, &*component);
+        for (_, component) in self.animation.pose.0.into_iter() {
+            (component.apply.apply)(&mut self.entity_world, component.reflect);
         }
     }
 }

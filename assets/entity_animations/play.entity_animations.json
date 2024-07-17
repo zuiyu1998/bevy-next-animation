@@ -1,77 +1,37 @@
 {
     "idle": {
         "tracks": {
-            "AnimationIndices": {
+            "TestA": {
                 "values": {
-                    "index": {
+                    "a": {
                         "enabled": true,
                         "frames": {
                             "keyframes": {
-                                "3157ceea-32a7-4dcd-8994-9a4b8b8f32d6": {
-                                    "id": "3157ceea-32a7-4dcd-8994-9a4b8b8f32d6",
-                                    "location": 1,
-                                    "value": {
-                                        "Number": 1
-                                    }
-                                },
-                                "33f072ff-2134-400d-b0da-0621d9e08bfb": {
-                                    "id": "33f072ff-2134-400d-b0da-0621d9e08bfb",
+                                "cbe3f21b-082b-473d-a888-beab8bcda35c": {
+                                    "id": "cbe3f21b-082b-473d-a888-beab8bcda35c",
                                     "location": 0,
                                     "value": {
-                                        "Number": 0
+                                        "Number": 0.0
                                     }
                                 },
-                                "9283ac78-60e3-4396-93af-f5c128f5d1f2": {
-                                    "id": "9283ac78-60e3-4396-93af-f5c128f5d1f2",
-                                    "location": 2,
+                                "a55833c5-383b-4a08-bff7-0f8972590734": {
+                                    "id": "a55833c5-383b-4a08-bff7-0f8972590734",
+                                    "location": 1,
                                     "value": {
-                                        "Number": 2
-                                    }
-                                },
-                                "8f94cde6-3d1d-4166-8f3d-56babd8d51a6": {
-                                    "id": "8f94cde6-3d1d-4166-8f3d-56babd8d51a6",
-                                    "location": 3,
-                                    "value": {
-                                        "Number": 3
-                                    }
-                                },
-                                "05623087-66c0-477e-9440-640cb6bb2381": {
-                                    "id": "05623087-66c0-477e-9440-640cb6bb2381",
-                                    "location": 4,
-                                    "value": {
-                                        "Number": 4
-                                    }
-                                },
-                                "108dc2c1-619f-4733-a0ee-9eb4a86e4261": {
-                                    "id": "108dc2c1-619f-4733-a0ee-9eb4a86e4261",
-                                    "location": 5,
-                                    "value": {
-                                        "Number": 5
-                                    }
-                                },
-                                "a43f15b7-3558-4947-9291-66b149fb414a": {
-                                    "id": "a43f15b7-3558-4947-9291-66b149fb414a",
-                                    "location": 6,
-                                    "value": {
-                                        "Number": 6
+                                        "Number": 1.0
                                     }
                                 }
                             },
                             "mode": "Constant",
-                            "frame_duration": 0.5,
+                            "frame_duration": 0.1,
                             "frame_indexs": [
-                                "33f072ff-2134-400d-b0da-0621d9e08bfb",
-                                "3157ceea-32a7-4dcd-8994-9a4b8b8f32d6",
-                                "9283ac78-60e3-4396-93af-f5c128f5d1f2",
-                                "8f94cde6-3d1d-4166-8f3d-56babd8d51a6",
-                                "05623087-66c0-477e-9440-640cb6bb2381",
-                                "108dc2c1-619f-4733-a0ee-9eb4a86e4261",
-                                "a43f15b7-3558-4947-9291-66b149fb414a"
+                                "cbe3f21b-082b-473d-a888-beab8bcda35c",
+                                "a55833c5-383b-4a08-bff7-0f8972590734"
                             ]
                         },
                         "binding": {
-                            "path": "index",
-                            "value_type": "Usize"
+                            "path": "a",
+                            "value_type": "bool"
                         }
                     }
                 }

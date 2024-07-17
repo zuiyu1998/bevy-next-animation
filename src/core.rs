@@ -11,9 +11,9 @@ impl AnimationName {
 }
 
 #[derive(Debug, Default, Hash, PartialEq, Eq, Clone, Deref, DerefMut, Deserialize, Serialize)]
-pub struct ComponentShortTypePath(String);
+pub struct ShortTypePath(String);
 
-impl ComponentShortTypePath {
+impl ShortTypePath {
     pub fn from_type_path<T: TypePath>() -> Self {
         Self(T::short_type_path().to_string())
     }

@@ -8,6 +8,11 @@ use bevy::{
 
 use bevy_next_animation::prelude::*;
 
+#[derive(Reflect, Component)]
+pub struct TestA {
+    a: bool,
+}
+
 fn main() {
     let mut app = App::new();
 
@@ -22,58 +27,51 @@ fn main() {
         BevyNextAnimationPlugin,
     ));
 
-    app.register_type::<TextureAtlas>();
+    app.register_type::<TestA>();
+    app.register_animate_component::<TestA>();
 
     app.add_systems(Startup, setup);
-    app.add_systems(Update, animate_sprite);
+    app.add_systems(Update, debug_print);
 
     app.run();
 }
 
-#[derive(Component, Reflect)]
-#[reflect(Component)]
-struct AnimationIndices {
-    index: usize,
-}
-
-fn animate_sprite(mut query: Query<(&AnimationIndices, &mut TextureAtlas)>) {
-    for (indices, mut atlas) in &mut query {
-        atlas.index = indices.index;
-    }
-}
-
 pub fn setup(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    mut entity_animations_assets: ResMut<Assets<EntityAnimations>>,
 ) {
     commands.spawn(Camera2dBundle::default());
 
-    let texture = asset_server.load("gabe-idle-run.png");
-    let layout = TextureAtlasLayout::from_grid(UVec2::splat(24), 7, 1, None, None);
-    let texture_atlas_layout = texture_atlas_layouts.add(layout);
+    let binding = ValueBinding {
+        path: "a".to_owned(),
+        value_type: ShortTypePath::from_type_path::<bool>(),
+    };
 
-    println!("{}", get_type_path::<TextureAtlas>());
+    let mut track = Track::new(binding, 0.1, 2);
 
-    let handle = asset_server.load("entity_animations/play.entity_animations.json");
+    track.add_keyframe(Keyframe::new(0, TrackValue::Number(0.0)));
+    track.add_keyframe(Keyframe::new(1, TrackValue::Number(1.0)));
 
-    let entity = commands
-        .spawn((
-            SpriteBundle {
-                transform: Transform::from_scale(Vec3::splat(6.0)),
-                texture,
-                ..default()
-            },
-            TextureAtlas {
-                layout: texture_atlas_layout,
-                index: 0,
-            },
-            AnimationIndices { index: 0 },
-        ))
-        .id();
+    let mut entity_track = EntityTrack::default();
+
+    entity_track.add_track(track);
+
+    let mut entity_animation = EntityAnimation::default();
+
+    entity_animation
+        .tracks
+        .insert(ShortTypePath::from_type_path::<TestA>(), entity_track);
+
+    let mut entity_animations = EntityAnimations::default();
+    entity_animations.insert(AnimationName::new("idle"), entity_animation);
+
+    println!("{}", serde_json::to_string(&entity_animations).unwrap());
+
+    let entity = commands.spawn(TestA { a: false }).id();
 
     let mut builder = AnimationsBuilder::entity(entity);
-    builder.add_handle("self", handle);
+
+    builder.add_handle("self", entity_animations_assets.add(entity_animations));
 
     let mut animation_player = NextAnimationPlayer::default();
 
@@ -83,4 +81,10 @@ pub fn setup(
         animation_player,
         builder.get_animation_bundle("self").unwrap(),
     ));
+}
+
+fn debug_print(query: Query<&TestA>) {
+    for test_a in query.iter() {
+        println!("{}", test_a.a);
+    }
 }

@@ -143,13 +143,13 @@ mod test {
     #[test]
     fn test_track() {
         use super::{Keyframe, Track, ValueBinding};
+        use crate::prelude::ShortTypePath;
         use crate::prelude::TrackValue;
-        use crate::value::ValueType;
 
         let mut track = Track::new(
             ValueBinding {
                 path: "a".to_owned(),
-                value_type: ValueType::Bool,
+                value_type: ShortTypePath::from_type_path::<bool>(),
             },
             0.5,
             2,
