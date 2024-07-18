@@ -5,7 +5,6 @@ pub use animate_components::*;
 pub use animate_value::*;
 
 use bevy::{
-    app::App,
     asset::AssetServer,
     log::warn,
     reflect::{Reflect, TypeRegistry},
@@ -13,23 +12,6 @@ use bevy::{
 use serde::{Deserialize, Serialize};
 
 use crate::prelude::ShortTypePath;
-
-pub trait AnimationExt {
-    fn register_animate_value<T: AnimateValue>(&mut self) -> &mut Self;
-    fn register_animate_component<T: AnimateComponent>(&mut self) -> &mut Self;
-}
-
-impl AnimationExt for App {
-    fn register_animate_value<T: AnimateValue>(&mut self) -> &mut Self {
-        self.register_type_data::<T, AnimateValueFns>();
-        self
-    }
-
-    fn register_animate_component<T: AnimateComponent>(&mut self) -> &mut Self {
-        self.register_type_data::<T, AnimateComponentFns>();
-        self
-    }
-}
 
 #[derive(Clone)]
 pub struct BoundComponentValue(pub Vec<BoundValue>);

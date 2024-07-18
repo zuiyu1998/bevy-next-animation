@@ -2,9 +2,27 @@ use crate::{
     assets::EntityAnimationsLoader,
     core::AnimationName,
     entity::{EntityAnimationContext, NextAnimation},
-    prelude::{AnimationExt, EntityAnimations},
+    prelude::EntityAnimations,
+    value::{AnimateComponent, AnimateComponentFns, AnimateValue, AnimateValueFns},
 };
 use bevy::{ecs::system::SystemState, prelude::*};
+
+pub trait AnimationExt {
+    fn register_animate_value<T: AnimateValue>(&mut self) -> &mut Self;
+    fn register_animate_component<T: AnimateComponent>(&mut self) -> &mut Self;
+}
+
+impl AnimationExt for App {
+    fn register_animate_value<T: AnimateValue>(&mut self) -> &mut Self {
+        self.register_type_data::<T, AnimateValueFns>();
+        self
+    }
+
+    fn register_animate_component<T: AnimateComponent>(&mut self) -> &mut Self {
+        self.register_type_data::<T, AnimateComponentFns>();
+        self
+    }
+}
 
 #[derive(Debug, Component)]
 pub struct NextAnimationTarget {
