@@ -44,7 +44,7 @@ pub fn setup(
 
     let binding = ValueBinding {
         path: ".a".to_owned(),
-        component_type: ShortTypePath::from_type_path::<bool>(),
+        value_type: ShortTypePath::from_type_path::<bool>(),
     };
 
     let mut track = Track::new(binding, 0.1, 2);

@@ -147,7 +147,7 @@ mod test {
         let mut track = Track::new(
             ValueBinding {
                 path: ".a".to_owned(),
-                component_type: ShortTypePath::from_type_path::<bool>(),
+                value_type: ShortTypePath::from_type_path::<bool>(),
             },
             0.5,
             2,

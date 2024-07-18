@@ -1,6 +1,6 @@
 use crate::prelude::ShortTypePath;
 
-use super::TrackValue;
+use super::{ReflectError, TrackValue};
 use bevy::{
     asset::{Asset, AssetServer, Handle},
     prelude::Reflect,
@@ -24,7 +24,8 @@ pub struct AnimationValueAssetPath {
 
 #[derive(Clone)]
 pub struct AnimateValueFns {
-    pub reflect: fn(&TrackValue, asset_server: &AssetServer) -> Option<Box<dyn Reflect>>,
+    pub reflect:
+        fn(&TrackValue, asset_server: &AssetServer) -> Result<Box<dyn Reflect>, ReflectError>,
 }
 
 impl AnimateValueFns {
@@ -39,18 +40,18 @@ pub trait AnimateValue: Reflect + TypePath {
     fn get_reflect_value(
         value: &TrackValue,
         asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>>;
+    ) -> Result<Box<dyn Reflect>, ReflectError>;
 }
 
 impl AnimateValue for bool {
     fn get_reflect_value(
         value: &TrackValue,
         _asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
+    ) -> Result<Box<dyn Reflect>, ReflectError> {
         match value {
-            TrackValue::Number(number) => return Some(Box::new(number.ne(&0.0))),
+            TrackValue::Number(number) => return Ok(Box::new(number.ne(&0.0))),
             _ => {
-                return None;
+                return Err(ReflectError::Kind(format!("TrackValue is not valid.")));
             }
         }
     }
@@ -60,11 +61,11 @@ impl AnimateValue for usize {
     fn get_reflect_value(
         value: &TrackValue,
         _asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
+    ) -> Result<Box<dyn Reflect>, ReflectError> {
         match value {
-            TrackValue::Number(number) => return Some(Box::new(*number as usize)),
+            TrackValue::Number(number) => return Ok(Box::new(*number as usize)),
             _ => {
-                return None;
+                return Err(ReflectError::Kind(format!("TrackValue is not valid.")));
             }
         }
     }
@@ -74,19 +75,19 @@ impl<A: Asset> AnimateValue for Handle<A> {
     fn get_reflect_value(
         value: &TrackValue,
         asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
+    ) -> Result<Box<dyn Reflect>, ReflectError> {
         match value {
             TrackValue::Asset(asset) => {
                 if asset.type_path != ShortTypePath::from_type_path::<Self>() {
-                    return None;
+                    return Err(ReflectError::Kind(format!("asset type mismatch.")));
                 } else {
                     let handle: Self = asset_server.load(asset.path.clone());
 
-                    return Some(Box::new(handle));
+                    return Ok(Box::new(handle));
                 }
             }
             _ => {
-                return None;
+                return Err(ReflectError::Kind(format!("TrackValue is not valid.")));
             }
         }
     }

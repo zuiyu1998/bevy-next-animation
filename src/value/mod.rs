@@ -10,8 +10,15 @@ use bevy::{
     reflect::{Reflect, TypeRegistry},
 };
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
-use crate::prelude::ShortTypePath;
+use crate::core::ShortTypePath;
+
+#[derive(Debug, Error)]
+pub enum ReflectError {
+    #[error("reflect error: {0}")]
+    Kind(String),
+}
 
 #[derive(Clone)]
 pub struct BoundComponentValue(pub Vec<BoundValue>);
@@ -25,15 +32,25 @@ impl BoundComponentValue {
         let mut values = vec![];
 
         for bound_value in self.0.iter() {
-            if let Some(reflect) = bound_value.get_relect_value(registry, asset_server) {
-                values.push(ReflectBoundValue {
-                    value: reflect,
-                    path: bound_value.binding.path.clone(),
-                });
+            match bound_value.get_relect_value(registry, asset_server) {
+                Ok(reflect) => {
+                    values.push(ReflectBoundValue {
+                        value: reflect,
+                        path: bound_value.binding.path.clone(),
+                    });
+                }
+
+                Err(e) => {
+                    warn!("get_relect_value error: {}", e);
+                }
             }
         }
 
-        Some(ComponentPose { values })
+        if values.is_empty() {
+            return None;
+        } else {
+            Some(ComponentPose { values })
+        }
     }
 }
 
@@ -60,7 +77,7 @@ impl Clone for ReflectBoundValue {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ValueBinding {
     pub path: String,
-    pub component_type: ShortTypePath,
+    pub value_type: ShortTypePath,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize, PartialOrd)]
@@ -100,28 +117,20 @@ impl BoundValue {
         &self,
         registry: &TypeRegistry,
         asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
-        if let Some(registraion) = registry.get_with_short_type_path(&self.binding.component_type) {
-            if let Some(fns) = registraion.data::<AnimateValueFns>() {
-                if let Some(field) = (fns.reflect)(&self.value, asset_server) {
-                    return Some(field);
-                } else {
-                    warn!(
-                        "{:?} not impl AnimatinValue trait.",
-                        registraion.type_info().type_path_table().ident()
-                    );
-
-                    return None;
-                }
-            } else {
-                warn!(
-                    "{:?} not found AnimationValueFns.",
-                    registraion.type_info().type_path_table().ident()
-                );
-                return None;
-            }
+    ) -> Result<Box<dyn Reflect>, ReflectError> {
+        let registraion = registry
+            .get_with_short_type_path(&self.binding.value_type)
+            .ok_or(ReflectError::Kind(format!(
+                "{:?} not register type",
+                self.binding.value_type
+            )))?;
+        if let Some(fns) = registraion.data::<AnimateValueFns>() {
+            (fns.reflect)(&self.value, asset_server)
+        } else {
+            Err(ReflectError::Kind(format!(
+                "{:?} not register animate value",
+                self.binding.value_type
+            )))
         }
-
-        return None;
     }
 }
