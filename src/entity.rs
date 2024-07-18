@@ -3,7 +3,6 @@ use crate::{
     core::{AnimationName, ShortTypePath},
     prelude::{AnimateComponentFns, ComponentPose},
     track::ComponentTrack,
-    value::ValueBinding,
 };
 use bevy::{prelude::*, reflect::TypeRegistry, utils::HashMap};
 use serde::{Deserialize, Serialize};
@@ -12,23 +11,6 @@ use serde::{Deserialize, Serialize};
 pub struct ReflectComponent {
     pub pose: ComponentPose,
     pub apply: AnimateComponentFns,
-}
-
-pub struct ReflecBoundValue {
-    pub binding: ValueBinding,
-    pub value: Option<Box<dyn Reflect>>,
-}
-
-impl Clone for ReflecBoundValue {
-    fn clone(&self) -> Self {
-        ReflecBoundValue {
-            binding: self.binding.clone(),
-            value: self
-                .value
-                .as_ref()
-                .and_then(|value| Some(value.clone_value())),
-        }
-    }
 }
 
 #[derive(Default, Clone, Deref, Deserialize, Serialize)]

@@ -1,15 +1,50 @@
-use bevy::utils::HashMap;
+use bevy::{asset::AssetServer, log::warn, reflect::TypeRegistry, utils::HashMap};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{
-    prelude::ShortTypePath,
-    value::{BoundComponentValue, BoundValue, TrackValue, ValueBinding},
-};
+use crate::value::{BoundValue, ReflectBoundValue, TrackValue, ValueBinding};
+
+#[derive(Clone)]
+pub struct BoundComponentValue(pub Vec<BoundValue>);
+
+impl BoundComponentValue {
+    pub fn get_component_pose(
+        &self,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> Option<ComponentPose> {
+        let mut values = vec![];
+
+        for bound_value in self.0.iter() {
+            match bound_value.get_relect_value(registry, asset_server) {
+                Ok(reflect) => {
+                    values.push(ReflectBoundValue {
+                        value: reflect,
+                        path: bound_value.binding.path.clone(),
+                    });
+                }
+
+                Err(e) => {
+                    warn!("get_relect_value error: {}", e);
+                }
+            }
+        }
+
+        if values.is_empty() {
+            return None;
+        } else {
+            Some(ComponentPose { values })
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct ComponentPose {
+    pub values: Vec<ReflectBoundValue>,
+}
 
 #[derive(Clone, Deserialize, Serialize, Default)]
 pub struct ComponentTrack {
-    pub component_type: ShortTypePath,
     pub values: HashMap<String, Track>,
 }
 

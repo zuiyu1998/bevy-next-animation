@@ -3,7 +3,8 @@ use crate::{
     core::AnimationName,
     entity::{EntityAnimationContext, NextAnimation},
     prelude::EntityAnimations,
-    value::{AnimateComponent, AnimateComponentFns, AnimateValue, AnimateValueFns},
+    track::{AnimateComponent, AnimateComponentFns},
+    value::{AnimateValue, AnimateValueFns},
 };
 use bevy::{ecs::system::SystemState, prelude::*};
 

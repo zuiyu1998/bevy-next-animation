@@ -1,229 +1,41 @@
 {
-    "mani": {
+    "idle": {
         "tracks": {
-            "TextureAtlas": {
-                "component_type": "TextureAtlas",
-                "data": {
-                    "Multiple": {
-                        "index": {
-                            "enabled": true,
-                            "frames": {
-                                "keyframes": {
-                                    "cdbf053a-3fe1-4bec-921a-38262dabbf16": {
-                                        "id": "cdbf053a-3fe1-4bec-921a-38262dabbf16",
-                                        "location": 0,
-                                        "value": {
-                                            "Number": 0.0
-                                        }
-                                    },
-                                    "e47d6abe-2050-4978-8932-6e6768e982b3": {
-                                        "id": "e47d6abe-2050-4978-8932-6e6768e982b3",
-                                        "location": 1,
-                                        "value": {
-                                            "Number": 1.0
-                                        }
-                                    },
-                                    "01d15736-49df-4ce4-8187-ebabdd252587": {
-                                        "id": "01d15736-49df-4ce4-8187-ebabdd252587",
-                                        "location": 2,
-                                        "value": {
-                                            "Number": 2.0
-                                        }
-                                    },
-                                    "7e990299-a8bc-4388-9d6a-31819ca8ff5e": {
-                                        "id": "7e990299-a8bc-4388-9d6a-31819ca8ff5e",
-                                        "location": 3,
-                                        "value": {
-                                            "Number": 3.0
-                                        }
-                                    },
-                                    "cac79883-13aa-4df1-b4b0-4b14333187d6": {
-                                        "id": "cac79883-13aa-4df1-b4b0-4b14333187d6",
-                                        "location": 4,
-                                        "value": {
-                                            "Number": 4.0
-                                        }
-                                    },
-                                    "d4116ec8-27ad-4f78-8784-58488b71f686": {
-                                        "id": "d4116ec8-27ad-4f78-8784-58488b71f686",
-                                        "location": 5,
-                                        "value": {
-                                            "Number": 5.0
-                                        }
-                                    },
-                                    "79052a69-64e5-4184-877e-3ba4f59b4bce": {
-                                        "id": "79052a69-64e5-4184-877e-3ba4f59b4bce",
-                                        "location": 6,
-                                        "value": {
-                                            "Number": 6.0
-                                        }
-                                    }
-                                },
-                                "mode": "Constant",
-                                "frame_duration": 0.1,
-                                "frame_indexs": [
-                                    "cdbf053a-3fe1-4bec-921a-38262dabbf16",
-                                    "e47d6abe-2050-4978-8932-6e6768e982b3",
-                                    "01d15736-49df-4ce4-8187-ebabdd252587",
-                                    "7e990299-a8bc-4388-9d6a-31819ca8ff5e",
-                                    "cac79883-13aa-4df1-b4b0-4b14333187d6",
-                                    "d4116ec8-27ad-4f78-8784-58488b71f686",
-                                    "79052a69-64e5-4184-877e-3ba4f59b4bce"
-                                ]
-                            },
-                            "binding": {
-                                "path": "index",
-                                "component_type": "usize"
-                            }
-                        }
-                    }
-                },
-                "relect_kind": "Struct"
-            },
-            "Handle<Image>": {
-                "component_type": "Handle<Image>",
-                "data": {
-                    "Single": {
+            "TestA": {
+                "component_type": "",
+                "values": {
+                    ".a": {
                         "enabled": true,
                         "frames": {
                             "keyframes": {
-                                "596a53e9-e0b6-4963-ba7a-3ff133696f0e": {
-                                    "id": "596a53e9-e0b6-4963-ba7a-3ff133696f0e",
+                                "f327472e-96e5-4118-bf6a-d0104b4f3a9b": {
+                                    "id": "f327472e-96e5-4118-bf6a-d0104b4f3a9b",
+                                    "location": 1,
+                                    "value": {
+                                        "Number": 1.0
+                                    }
+                                },
+                                "3c47f33b-d075-4d75-97f3-01c434aa3010": {
+                                    "id": "3c47f33b-d075-4d75-97f3-01c434aa3010",
                                     "location": 0,
                                     "value": {
-                                        "Asset": {
-                                            "path": "mani-idle-run.png",
-                                            "type_path": "Handle<Image>"
-                                        }
+                                        "Number": 0.0
                                     }
                                 }
                             },
                             "mode": "Constant",
                             "frame_duration": 0.1,
                             "frame_indexs": [
-                                "596a53e9-e0b6-4963-ba7a-3ff133696f0e"
+                                "3c47f33b-d075-4d75-97f3-01c434aa3010",
+                                "f327472e-96e5-4118-bf6a-d0104b4f3a9b"
                             ]
                         },
                         "binding": {
-                            "component_type": "Handle<Image>"
+                            "path": ".a",
+                            "value_type": "bool"
                         }
                     }
-                },
-                "relect_kind": "Enum"
-            }
-        }
-    },
-    "gabe": {
-        "tracks": {
-            "TextureAtlas": {
-                "component_type": "TextureAtlas",
-                "data": {
-                    "Multiple": {
-                        "index": {
-                            "enabled": true,
-                            "frames": {
-                                "keyframes": {
-                                    "cdbf053a-3fe1-4bec-921a-38262dabbf16": {
-                                        "id": "cdbf053a-3fe1-4bec-921a-38262dabbf16",
-                                        "location": 0,
-                                        "value": {
-                                            "Number": 0.0
-                                        }
-                                    },
-                                    "e47d6abe-2050-4978-8932-6e6768e982b3": {
-                                        "id": "e47d6abe-2050-4978-8932-6e6768e982b3",
-                                        "location": 1,
-                                        "value": {
-                                            "Number": 1.0
-                                        }
-                                    },
-                                    "01d15736-49df-4ce4-8187-ebabdd252587": {
-                                        "id": "01d15736-49df-4ce4-8187-ebabdd252587",
-                                        "location": 2,
-                                        "value": {
-                                            "Number": 2.0
-                                        }
-                                    },
-                                    "7e990299-a8bc-4388-9d6a-31819ca8ff5e": {
-                                        "id": "7e990299-a8bc-4388-9d6a-31819ca8ff5e",
-                                        "location": 3,
-                                        "value": {
-                                            "Number": 3.0
-                                        }
-                                    },
-                                    "cac79883-13aa-4df1-b4b0-4b14333187d6": {
-                                        "id": "cac79883-13aa-4df1-b4b0-4b14333187d6",
-                                        "location": 4,
-                                        "value": {
-                                            "Number": 4.0
-                                        }
-                                    },
-                                    "d4116ec8-27ad-4f78-8784-58488b71f686": {
-                                        "id": "d4116ec8-27ad-4f78-8784-58488b71f686",
-                                        "location": 5,
-                                        "value": {
-                                            "Number": 5.0
-                                        }
-                                    },
-                                    "79052a69-64e5-4184-877e-3ba4f59b4bce": {
-                                        "id": "79052a69-64e5-4184-877e-3ba4f59b4bce",
-                                        "location": 6,
-                                        "value": {
-                                            "Number": 6.0
-                                        }
-                                    }
-                                },
-                                "mode": "Constant",
-                                "frame_duration": 0.1,
-                                "frame_indexs": [
-                                    "cdbf053a-3fe1-4bec-921a-38262dabbf16",
-                                    "e47d6abe-2050-4978-8932-6e6768e982b3",
-                                    "01d15736-49df-4ce4-8187-ebabdd252587",
-                                    "7e990299-a8bc-4388-9d6a-31819ca8ff5e",
-                                    "cac79883-13aa-4df1-b4b0-4b14333187d6",
-                                    "d4116ec8-27ad-4f78-8784-58488b71f686",
-                                    "79052a69-64e5-4184-877e-3ba4f59b4bce"
-                                ]
-                            },
-                            "binding": {
-                                "path": "index",
-                                "component_type": "usize"
-                            }
-                        }
-                    }
-                },
-                "relect_kind": "Struct"
-            },
-            "Handle<Image>": {
-                "component_type": "Handle<Image>",
-                "data": {
-                    "Single": {
-                        "enabled": true,
-                        "frames": {
-                            "keyframes": {
-                                "596a53e9-e0b6-4963-ba7a-3ff133696f0e": {
-                                    "id": "596a53e9-e0b6-4963-ba7a-3ff133696f0e",
-                                    "location": 0,
-                                    "value": {
-                                        "Asset": {
-                                            "path": "gabe-idle-run.png",
-                                            "type_path": "Handle<Image>"
-                                        }
-                                    }
-                                }
-                            },
-                            "mode": "Constant",
-                            "frame_duration": 0.1,
-                            "frame_indexs": [
-                                "596a53e9-e0b6-4963-ba7a-3ff133696f0e"
-                            ]
-                        },
-                        "binding": {
-                            "component_type": "Handle<Image>"
-                        }
-                    }
-                },
-                "relect_kind": "Enum"
+                }
             }
         }
     }

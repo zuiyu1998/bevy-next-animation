@@ -1,12 +1,9 @@
-mod animate_components;
 mod animate_value;
 
-pub use animate_components::*;
 pub use animate_value::*;
 
 use bevy::{
     asset::AssetServer,
-    log::warn,
     reflect::{Reflect, TypeRegistry},
 };
 use serde::{Deserialize, Serialize};
@@ -18,45 +15,6 @@ use crate::core::ShortTypePath;
 pub enum ReflectError {
     #[error("reflect error: {0}")]
     Kind(String),
-}
-
-#[derive(Clone)]
-pub struct BoundComponentValue(pub Vec<BoundValue>);
-
-impl BoundComponentValue {
-    pub fn get_component_pose(
-        &self,
-        registry: &TypeRegistry,
-        asset_server: &AssetServer,
-    ) -> Option<ComponentPose> {
-        let mut values = vec![];
-
-        for bound_value in self.0.iter() {
-            match bound_value.get_relect_value(registry, asset_server) {
-                Ok(reflect) => {
-                    values.push(ReflectBoundValue {
-                        value: reflect,
-                        path: bound_value.binding.path.clone(),
-                    });
-                }
-
-                Err(e) => {
-                    warn!("get_relect_value error: {}", e);
-                }
-            }
-        }
-
-        if values.is_empty() {
-            return None;
-        } else {
-            Some(ComponentPose { values })
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct ComponentPose {
-    pub values: Vec<ReflectBoundValue>,
 }
 
 pub struct ReflectBoundValue {
