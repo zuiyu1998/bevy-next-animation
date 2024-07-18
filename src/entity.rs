@@ -1,25 +1,17 @@
 use crate::{
     assets::EntityAnimations,
     core::{AnimationName, ShortTypePath},
-    prelude::AnimateComponentFns,
+    prelude::{AnimateComponentFns, ComponentPose},
     track::ComponentTrack,
     value::ValueBinding,
 };
 use bevy::{prelude::*, reflect::TypeRegistry, utils::HashMap};
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone)]
 pub struct ReflectComponent {
-    pub reflect: Box<dyn Reflect>,
+    pub pose: ComponentPose,
     pub apply: AnimateComponentFns,
-}
-
-impl Clone for ReflectComponent {
-    fn clone(&self) -> Self {
-        ReflectComponent {
-            reflect: self.reflect.clone_value(),
-            apply: self.apply.clone(),
-        }
-    }
 }
 
 pub struct ReflecBoundValue {
@@ -56,16 +48,17 @@ impl EntityAnimation {
         for (type_path, track) in self.tracks.iter() {
             if let Some(registraion) = registry.get_with_short_type_path(&type_path) {
                 if let Some(apply) = registraion.data::<AnimateComponentFns>() {
-                    if let Some(collection) = track.fetch(dt) {
-                        if let Some(reflect) = collection.get_dynamic(registry, asset_server) {
-                            pose.insert(
-                                type_path.clone(),
-                                ReflectComponent {
-                                    reflect,
-                                    apply: apply.clone(),
-                                },
-                            );
-                        }
+                    let collection = track.fetch(dt);
+                    if let Some(component_pose) =
+                        collection.get_component_pose(registry, asset_server)
+                    {
+                        pose.insert(
+                            type_path.clone(),
+                            ReflectComponent {
+                                pose: component_pose,
+                                apply: apply.clone(),
+                            },
+                        );
                     }
                 } else {
                     warn!("{:?} not register_animate_component.", type_path);
@@ -114,7 +107,7 @@ pub struct EntityAnimationContext<'a> {
 impl<'a> EntityAnimationContext<'a> {
     pub fn apply(mut self) {
         for (_, component) in self.animation.pose.0.into_iter() {
-            (component.apply.apply)(&mut self.entity_world, component.reflect);
+            (component.apply.apply)(&mut self.entity_world, component.pose);
         }
     }
 }

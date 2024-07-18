@@ -39,12 +39,11 @@ fn main() {
 pub fn setup(
     mut commands: Commands,
     mut entity_animations_assets: ResMut<Assets<EntityAnimations>>,
-    registry: Res<AppTypeRegistry>,
 ) {
     commands.spawn(Camera2dBundle::default());
 
     let binding = ValueBinding {
-        path: Some("a".to_owned()),
+        path: ".a".to_owned(),
         component_type: ShortTypePath::from_type_path::<bool>(),
     };
 
@@ -53,11 +52,7 @@ pub fn setup(
     track.add_keyframe(Keyframe::new(0, TrackValue::Number(0.0)));
     track.add_keyframe(Keyframe::new(1, TrackValue::Number(1.0)));
 
-    let mut entity_track = {
-        let registry = registry.read();
-
-        ComponentTrack::new::<TestA>(&registry).unwrap()
-    };
+    let mut entity_track = ComponentTrack::default();
 
     entity_track.add_track(track);
 

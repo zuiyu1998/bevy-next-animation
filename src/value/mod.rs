@@ -8,11 +8,10 @@ use bevy::{
     app::App,
     asset::AssetServer,
     log::warn,
-    reflect::{DynamicStruct, Reflect, TypeRegistry},
+    reflect::{Reflect, TypeRegistry},
 };
 use serde::{Deserialize, Serialize};
 
-use crate::core::ComponentReflectKind;
 use crate::prelude::ShortTypePath;
 
 pub trait AnimationExt {
@@ -33,79 +32,44 @@ impl AnimationExt for App {
 }
 
 #[derive(Clone)]
-pub struct BoundComponentValue {
-    pub data: BoundValueData,
-    pub relect_kind: ComponentReflectKind,
+pub struct BoundComponentValue(pub Vec<BoundValue>);
+
+impl BoundComponentValue {
+    pub fn get_component_pose(
+        &self,
+        registry: &TypeRegistry,
+        asset_server: &AssetServer,
+    ) -> Option<ComponentPose> {
+        let mut values = vec![];
+
+        for bound_value in self.0.iter() {
+            if let Some(reflect) = bound_value.get_relect_value(registry, asset_server) {
+                values.push(ReflectBoundValue {
+                    value: reflect,
+                    path: bound_value.binding.path.clone(),
+                });
+            }
+        }
+
+        Some(ComponentPose { values })
+    }
 }
 
 #[derive(Clone)]
-pub enum BoundValueData {
-    Single(BoundValue),
-    Multiple(Vec<BoundValue>),
+pub struct ComponentPose {
+    pub values: Vec<ReflectBoundValue>,
 }
 
-impl BoundComponentValue {
-    pub fn get_dynamic(
-        &self,
-        registry: &TypeRegistry,
-        asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
-        match self.relect_kind {
-            ComponentReflectKind::Struct => self.get_dynamic_struct(registry, asset_server),
-            ComponentReflectKind::Enum => self.get_dynamic_enum(registry, asset_server),
+pub struct ReflectBoundValue {
+    pub path: String,
+    pub value: Box<dyn Reflect>,
+}
 
-            _ => {
-                todo!()
-            }
-        }
-    }
-
-    pub fn get_dynamic_enum(
-        &self,
-        registry: &TypeRegistry,
-        asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
-        match &self.data {
-            BoundValueData::Single(v) => v.get_relect_value(registry, asset_server),
-            BoundValueData::Multiple(_) => {
-                return None;
-            }
-        }
-    }
-
-    pub fn get_dynamic_struct(
-        &self,
-        registry: &TypeRegistry,
-        asset_server: &AssetServer,
-    ) -> Option<Box<dyn Reflect>> {
-        match &self.data {
-            BoundValueData::Single(v) => v.get_relect_value(registry, asset_server),
-            BoundValueData::Multiple(values) => {
-                let mut dynamic = DynamicStruct::default();
-                for v in values.iter() {
-                    if let Some(registraion) =
-                        registry.get_with_short_type_path(&v.binding.component_type)
-                    {
-                        if let Some(fns) = registraion.data::<AnimateValueFns>() {
-                            if let Some(field) = (fns.reflect)(&v.value, asset_server) {
-                                dynamic.insert_boxed(v.binding.path.clone().unwrap(), field);
-                            } else {
-                                warn!(
-                                    "{:?} not impl AnimatinValue trait.",
-                                    registraion.type_info().type_path_table().ident()
-                                );
-                            }
-                        } else {
-                            warn!(
-                                "{:?} not found AnimationValueFns.",
-                                registraion.type_info().type_path_table().ident()
-                            );
-                        }
-                    }
-                }
-
-                Some(Box::new(dynamic))
-            }
+impl Clone for ReflectBoundValue {
+    fn clone(&self) -> Self {
+        ReflectBoundValue {
+            path: self.path.clone(),
+            value: self.value.clone_value(),
         }
     }
 }
@@ -113,15 +77,21 @@ impl BoundComponentValue {
 ///组件修改的字段路径和关键帧的数据类型
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ValueBinding {
-    pub path: Option<String>,
+    pub path: String,
     pub component_type: ShortTypePath,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize, PartialOrd)]
+pub struct AssetPath {
+    pub path: String,
+    pub type_path: ShortTypePath,
 }
 
 ///原始的关键帧数据
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize, PartialOrd)]
 pub enum TrackValue {
     Number(f32),
-    Asset(AnimationValueAssetPath),
+    Asset(AssetPath),
 }
 
 impl TrackValue {

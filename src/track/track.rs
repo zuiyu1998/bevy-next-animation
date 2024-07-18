@@ -1,138 +1,33 @@
-use std::any;
-
-use bevy::{
-    prelude::Component,
-    reflect::{Reflect, TypeInfo, TypePath, TypeRegistry},
-    utils::HashMap,
-};
+use bevy::utils::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    core::ComponentReflectKind,
-    prelude::{AnimateValueFns, ShortTypePath},
-    value::{BoundComponentValue, BoundValue, BoundValueData, TrackValue, ValueBinding},
+    prelude::ShortTypePath,
+    value::{BoundComponentValue, BoundValue, TrackValue, ValueBinding},
 };
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Default)]
 pub struct ComponentTrack {
     pub component_type: ShortTypePath,
-    pub data: TrackData,
-    pub relect_kind: ComponentReflectKind,
-}
-
-#[derive(Clone, Deserialize, Serialize)]
-pub enum TrackData {
-    Single(Track),
-    Multiple(HashMap<String, Track>),
-}
-
-fn get_relect_kind(tupe_info: &TypeInfo) -> ComponentReflectKind {
-    match tupe_info {
-        TypeInfo::Struct(_) => ComponentReflectKind::Struct,
-        TypeInfo::Enum(_) => ComponentReflectKind::Enum,
-        _ => ComponentReflectKind::None,
-    }
+    pub values: HashMap<String, Track>,
 }
 
 impl ComponentTrack {
     pub fn add_track(&mut self, track: Track) {
-        match &mut self.data {
-            TrackData::Multiple(tracks) => {
-                tracks.insert(track.binding.path.clone().unwrap(), track);
-            }
-
-            TrackData::Single(inner_track) => {
-                let mut track = track;
-                track.binding.path = None;
-
-                *inner_track = track;
-            }
-        }
+        self.values.insert(track.binding.path.clone(), track);
     }
 
-    pub fn new<T: Reflect + TypePath + Component>(registry: &TypeRegistry) -> Option<Self> {
-        let type_id = any::TypeId::of::<T>();
+    pub(crate) fn fetch(&self, time: f32) -> BoundComponentValue {
+        let mut bound_values = vec![];
 
-        match registry.get(type_id) {
-            None => None,
-            Some(registraion) => match get_relect_kind(registraion.type_info()) {
-                ComponentReflectKind::Struct => {
-                    if let Some(_) = registraion.data::<AnimateValueFns>() {
-                        Some(ComponentTrack {
-                            component_type: ShortTypePath::from_type_path::<T>(),
-                            relect_kind: ComponentReflectKind::Struct,
-                            data: TrackData::Single(Track::new(
-                                ValueBinding {
-                                    path: None,
-                                    component_type: ShortTypePath::from_type_path::<T>(),
-                                },
-                                0.1,
-                                10,
-                            )),
-                        })
-                    } else {
-                        Some(ComponentTrack {
-                            component_type: ShortTypePath::from_type_path::<T>(),
-                            relect_kind: ComponentReflectKind::Struct,
-                            data: TrackData::Multiple(Default::default()),
-                        })
-                    }
-                }
-                ComponentReflectKind::Enum => {
-                    if let Some(_) = registraion.data::<AnimateValueFns>() {
-                        Some(ComponentTrack {
-                            component_type: ShortTypePath::from_type_path::<T>(),
-                            relect_kind: ComponentReflectKind::Enum,
-                            data: TrackData::Single(Track::new(
-                                ValueBinding {
-                                    path: None,
-                                    component_type: ShortTypePath::from_type_path::<T>(),
-                                },
-                                0.1,
-                                10,
-                            )),
-                        })
-                    } else {
-                        Some(ComponentTrack {
-                            component_type: ShortTypePath::from_type_path::<T>(),
-                            relect_kind: ComponentReflectKind::Enum,
-                            data: TrackData::Multiple(Default::default()),
-                        })
-                    }
-                }
-                _ => None,
-            },
-        }
-    }
-
-    pub(crate) fn fetch(&self, time: f32) -> Option<BoundComponentValue> {
-        match &self.data {
-            TrackData::Multiple(values) => {
-                let mut bound_values = vec![];
-
-                for track in values.values() {
-                    if let Some(bound_value) = track.fetch(time) {
-                        bound_values.push(bound_value);
-                    }
-                }
-
-                Some(BoundComponentValue {
-                    relect_kind: self.relect_kind,
-                    data: BoundValueData::Multiple(bound_values),
-                })
-            }
-            TrackData::Single(track) => {
-                if let Some(bound_value) = track.fetch(time) {
-                    Some(BoundComponentValue {
-                        relect_kind: self.relect_kind,
-                        data: BoundValueData::Single(bound_value),
-                    })
-                } else {
-                    None
-                }
+        for track in self.values.values() {
+            if let Some(bound_value) = track.fetch(time) {
+                bound_values.push(bound_value);
             }
         }
+
+        BoundComponentValue(bound_values)
     }
 }
 
@@ -153,10 +48,6 @@ impl Track {
     }
     pub fn add_keyframe(&mut self, key_frame: Keyframe) {
         self.frames.add_keyframe(key_frame);
-    }
-
-    pub fn path(&self) -> Option<&str> {
-        self.binding.path.as_deref()
     }
 
     pub fn fetch(&self, time: f32) -> Option<BoundValue> {
@@ -255,7 +146,7 @@ mod test {
 
         let mut track = Track::new(
             ValueBinding {
-                path: Some("a".to_owned()),
+                path: ".a".to_owned(),
                 component_type: ShortTypePath::from_type_path::<bool>(),
             },
             0.5,
